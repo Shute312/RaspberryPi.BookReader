@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DD4C5D7A-375A-41EF-A1FE-1F50EDB978E7}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>BookReader</RootNamespace>
+    <AssemblyName>BookReader</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CRect.cs" />
+    <Compile Include="FontForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="FontForm.Designer.cs">
+      <DependentUpon>FontForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="GraphicForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GraphicForm.Designer.cs">
+      <DependentUpon>GraphicForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DocumentForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DocumentForm.Designer.cs">
+      <DependentUpon>DocumentForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SingleFrameForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SingleFrameForm.Designer.cs">
+      <DependentUpon>SingleFrameForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Utils.cs" />
+    <EmbeddedResource Include="FontForm.resx">
+      <DependentUpon>FontForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GraphicForm.resx">
+      <DependentUpon>GraphicForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DocumentForm.resx">
+      <DependentUpon>DocumentForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <EmbeddedResource Include="SingleFrameForm.resx">
+      <DependentUpon>SingleFrameForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CCommonLib\CCommonLib.csproj">
+      <Project>{897624b6-d558-465f-b1e1-8ca16748a2d4}</Project>
+      <Name>CCommonLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CGraphic\CGraphic.csproj">
+      <Project>{6d5f85e9-ee38-46ab-8868-b074e8411199}</Project>
+      <Name>CGraphic</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CReader\CReader.csproj">
+      <Project>{052c00c1-2607-4a98-83f1-c7357daa5f9c}</Project>
+      <Name>CReader</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CUI\CUI.csproj">
+      <Project>{4849d153-6cf1-4045-80ef-b24fab545a3c}</Project>
+      <Name>CUI</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\EInkLib\EInkLib.csproj">
+      <Project>{131751e1-2336-4d7e-9b12-e39a35baa5cf}</Project>
+      <Name>EInkLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Test.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

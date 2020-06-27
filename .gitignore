@@ -3,3 +3,9 @@
 ################################################################################
 
 /C#/.vs/BookReader/v16/Server/sqlite3
+/.vs/RaspberryPi.BookReader/v16
+/.vs
+*.suo
+/C#/BookReader/.vs/BookReader/v16/Server/sqlite3
+/C#/BookReader/bin/Debug
+/C#/BookReader/obj/Debug

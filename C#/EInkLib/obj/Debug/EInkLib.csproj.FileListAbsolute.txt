@@ -1,0 +1,10 @@
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\EInkLib.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\EInkLib.pdb
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\CCommonLib.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\CGraphic.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\CCommonLib.pdb
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\bin\Debug\CGraphic.pdb
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\obj\Debug\EInkLib.csprojAssemblyReference.cache
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\obj\Debug\EInkLib.csproj.CopyComplete
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\obj\Debug\EInkLib.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\EInkLib\obj\Debug\EInkLib.pdb

@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{4849D153-6CF1-4045-80EF-B24FAB545A3C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>CUI</RootNamespace>
+    <AssemblyName>CUI</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CGUI.cs" />
+    <Compile Include="CUIDocumentViewMethods.cs" />
+    <Compile Include="CUIEnvironment.cs" />
+    <Compile Include="CUIFrameMethods.cs" />
+    <Compile Include="CUIFrameMain.cs" />
+    <Compile Include="CUIFrameProperties.cs" />
+    <Compile Include="CUIInits.cs" />
+    <Compile Include="CUIDocumentView.cs" />
+    <Compile Include="CUIViewMethods.cs" />
+    <Compile Include="CUILayer.cs" />
+    <Compile Include="CUIViewProperties.cs" />
+    <Compile Include="CUIButton.cs" />
+    <Compile Include="CUIFrame.cs" />
+    <Compile Include="CUILinkButton.cs" />
+    <Compile Include="CUIApp.cs" />
+    <Compile Include="CUIView.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Structs.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CCommonLib\CCommonLib.csproj">
+      <Project>{897624b6-d558-465f-b1e1-8ca16748a2d4}</Project>
+      <Name>CCommonLib</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CGraphic\CGraphic.csproj">
+      <Project>{6d5f85e9-ee38-46ab-8868-b074e8411199}</Project>
+      <Name>CGraphic</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

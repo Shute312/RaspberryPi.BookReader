@@ -1,0 +1,4 @@
+E:\Code\GitHub\RaspberryPi\BookReader\C#\CUI\bin\Debug\CUI.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\CUI\bin\Debug\CUI.pdb
+E:\Code\GitHub\RaspberryPi\BookReader\C#\CUI\obj\Debug\CUI.dll
+E:\Code\GitHub\RaspberryPi\BookReader\C#\CUI\obj\Debug\CUI.pdb
