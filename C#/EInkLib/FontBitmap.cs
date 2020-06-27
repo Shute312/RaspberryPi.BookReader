@@ -15,6 +15,9 @@ namespace EInkLib
         public byte Y;
         public byte InnerWidth;
         public byte InnerHeight;
+
+        public byte Width;
+        public byte Height;
         public byte BitsPerPixel;
         public Int32 FontSize;
     }

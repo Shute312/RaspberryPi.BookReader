@@ -164,10 +164,6 @@ namespace CUI
                     innerRect.MinY = child.Location.Y + child.Padding.Top;
                     innerRect.MaxX = child.Location.X + child.Size.Width - child.Padding.Right;
                     innerRect.MaxY = child.Location.Y + child.Size.Height - child.Padding.Bottom;
-                    //ValueFuns.SetToMaxInt32(ref innerRect.MinX, 0);
-                    //ValueFuns.SetToMaxInt32(ref innerRect.MinY, 0);
-                    //ValueFuns.SetToMinInt32(ref innerRect.MaxX, child.Location.X + child.Size.Width);
-                    //ValueFuns.SetToMinInt32(ref innerRect.MaxY, child.Location.Y + child.Size.Height);
 
                     if (!ValueFuns.IsValidRect(innerRect))
                     {
@@ -179,31 +175,26 @@ namespace CUI
                         return;
                     }
 
+                    //for c  这里应该是引用对象，而不是复制
+                    var style = child.IsFocused ? child.ActiveStyle : child.Style;
+
                     //背景色(目前半透明当不透明来处理)
-                    if (child.BackColor >> 24 != 0xFF)
+                    if (style.BackColor >> 24 != 0xFF)
                     {
-                        CG.FillRect(ref layer.Bitmap, innerRect, child.BackColor);
+                        CG.FillRect(ref layer.Bitmap, innerRect, style.BackColor);
                     }
                     //边框
-                    if (child.BorderColor >> 24 != 0xFF && child.BorderThickness > 0)
+                    if (style.BorderColor >> 24 != 0xFF && style.BorderThickness > 0)
                     {
-                        if (child.IsFocused)
-                        {
-                            //边框色取反
-                            CG.DrawRectangle(ref layer.Bitmap, child.BorderThickness, innerRect, (~child.BorderColor)&0x00FFFFFF);
-                        }
-                        else
-                        {
-                            CG.DrawRectangle(ref layer.Bitmap, child.BorderThickness, innerRect, child.BorderColor);
-                        }
+                        CG.DrawRectangle(ref layer.Bitmap, style.BorderThickness, innerRect, style.BorderColor);
                     }
 
                     CRect contentRect = new CRect()
                     {
-                        MinX = innerRect.MinX + child.BorderThickness,
-                        MinY = innerRect.MinY + child.BorderThickness,
-                        MaxX = innerRect.MaxX - child.BorderThickness,
-                        MaxY = innerRect.MaxY - child.BorderThickness
+                        MinX = innerRect.MinX + style.BorderThickness,
+                        MinY = innerRect.MinY + style.BorderThickness,
+                        MaxX = innerRect.MaxX - style.BorderThickness,
+                        MaxY = innerRect.MaxY - style.BorderThickness
                     };
                     //CGraphic.CGraphic.DrawBitmap();
                     switch (child.UIType)
@@ -215,7 +206,7 @@ namespace CUI
                         case CUIViewType.Button:
                             if (ValueFuns.IsValidRect(contentRect))
                             {
-                                if (child.TextSize > 0 && child.ForeColor >> 24 != 0xFF)
+                                if (child.TextSize > 0 && style.FontColor >> 24 != 0xFF)
                                 {
                                     CTextInfo textInfo = new CTextInfo()
                                     {
@@ -226,7 +217,7 @@ namespace CUI
                                     };
                                     CPoint startPosition = new CPoint() { X = 0, Y = 0 };
                                     CFontInfo fontInfo;
-                                    CG.GetValidFontSize(child.FontSize, out fontInfo);
+                                    CG.GetValidFontSize(style.FontSize, out fontInfo);
                                     CRect textRect = new CRect();
                                     var renderTextLength = CG.MeasureText(textInfo, fontInfo, startPosition, contentRect, out textRect);
                                     if (renderTextLength > 0)

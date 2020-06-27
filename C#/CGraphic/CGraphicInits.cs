@@ -54,7 +54,7 @@ namespace CGraphic
             var time = stopwatch.ElapsedMilliseconds;
         }
 
-        public static void InitFontInfo(out CFontInfo info, in Int32 fontSize)
+        public static void InitFontInfo(in Int32 fontSize, out CFontInfo info)
         { 
             info = new CFontInfo();
             info.FontSize = fontSize;

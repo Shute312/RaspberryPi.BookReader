@@ -30,7 +30,7 @@ namespace EInkLib
                 var character = textInfo.Text[i];
                 Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
                 //强制换行
-                if (character == '\n' || (character == '\r' && i < textInfo.End - 1) && character == '\n')
+                if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i + 1] == '\n'))
                 {
                     if (character == '\r')
                     {
@@ -53,11 +53,11 @@ namespace EInkLib
                 {
                     firstRowMaxX = x;
                 }
-                x += fontInfo.Width;
-                if (y + fontInfo.Height + fontInfo.Height >= rect.MaxY)
+                if (y + fontInfo.Height + fontInfo.Height * newLineCount >= rect.MaxY)
                 {
                     break;
                 }
+                x += fontInfo.Width;
             }
             renderRect = new CRect();
             if (lineCount == 1)
@@ -87,6 +87,87 @@ namespace EInkLib
         /// <returns></returns>
         public static unsafe Int32 DrawText(ref CBitmap bitmap, in CTextInfo textInfo, CGraphic.CFontInfo fontInfo, in CRect rect, in CPoint startPosition, out CRect renderRect)
         {
+            //Contract.Assert(startPosition.X >= 0 && startPosition.Y >= 0
+            //    && startPosition.X <= (rect.MaxX - rect.MinX) && startPosition.Y <= (rect.MaxY - rect.MinY));
+            ///*
+            // * 需要支持的情况:
+            // * 1、单行
+            // * 2、单行，开头空2格
+            // * 3、多行
+            // * 4、多行，首行空2格
+            // */
+
+            //Int32 firstRowMaxX = 0;//首行的宽度
+            //Int32 length = 0;
+            //Int32 lineCount = 1;
+            //FontBitmap fontBitmap;
+            //for (Int32 i = textInfo.Start, x = startPosition.X + rect.MinX, y = startPosition.Y + rect.MinY; i < textInfo.End; i++, length++)
+            //{
+            //    var character = textInfo.Text[i];
+            //    Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
+            //    //强制换行
+            //    if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i + 1] == '\n'))
+            //    {
+            //        if (character == '\r')
+            //        {
+            //            i++;
+            //            length++;
+            //        }
+            //        newLineCount++;
+            //    }
+            //    if (x + fontInfo.Width >= rect.MaxX)
+            //    {
+            //        newLineCount++;
+            //    }
+            //    if (newLineCount > 0)
+            //    {
+            //        x = rect.MinX;
+            //        y += (fontInfo.Height * newLineCount);
+            //        lineCount += newLineCount;
+            //    }
+            //    else
+            //    {
+            //        firstRowMaxX = x;
+            //    }
+            //    CFont.GetFontBitmap(character, fontInfo.FontSize, out fontBitmap);
+            //    DrawFont(bitmap, x, y, fontBitmap, fontInfo);
+
+            //    if (y + fontInfo.Height + fontInfo.Height * newLineCount >= rect.MaxY)
+            //    {
+            //        break;
+            //    }
+            //    x += fontInfo.Width;
+            //}
+            //renderRect = new CRect();
+            //if (lineCount == 1)
+            //{
+            //    renderRect.MinY = startPosition.X + rect.MinX;
+            //    renderRect.MinY = startPosition.Y + rect.MinY;
+            //}
+            //else
+            //{
+            //    renderRect.MinY = rect.MinX;
+            //    renderRect.MinY = rect.MinY;
+            //}
+            //renderRect.MaxX = firstRowMaxX + fontInfo.Width;
+            //renderRect.MaxY = renderRect.MinY + fontInfo.Height * lineCount;
+            //return length;
+            return DrawTextInternal(bitmap, textInfo, fontInfo, rect, startPosition, out renderRect);
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bitmap"></param>
+        /// <param name="textInfo"></param>
+        /// <param name="fontInfo"></param>
+        /// <param name="rect"></param>
+        /// <param name="startPosition">是在rect内部从(0,0)开始的</param>
+        /// <param name="renderRect"></param>
+        /// <returns></returns>
+        public static unsafe Int32 DrawTextInternal(CBitmap? bitmap, in CTextInfo textInfo, CGraphic.CFontInfo fontInfo, in CRect rect, in CPoint startPosition, out CRect renderRect)
+        {
             Contract.Assert(startPosition.X >= 0 && startPosition.Y >= 0
                 && startPosition.X <= (rect.MaxX - rect.MinX) && startPosition.Y <= (rect.MaxY - rect.MinY));
             /*
@@ -97,46 +178,58 @@ namespace EInkLib
              * 4、多行，首行空2格
              */
 
-            Int32 firstRowMaxX = 0;//首行的宽度
             Int32 length = 0;
-            Int32 lineCount = 1;
             FontBitmap fontBitmap;
-            for (Int32 i = textInfo.Start, x = startPosition.X + rect.MinX, y = startPosition.Y + rect.MinY; i < textInfo.End; i++, length++)
-            {
-                var character = textInfo.Text[i];
-                Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
-                //强制换行
-                if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i+1] == '\n'))
-                {
-                    if (character == '\r')
-                    {
-                        i++;
-                        length++;
-                    }
-                    newLineCount++;
-                }
-                if (x + fontInfo.Width >= rect.MaxX)
-                {
-                    newLineCount++;
-                }
-                if (newLineCount > 0)
-                {
-                    x = rect.MinX;
-                    y += (fontInfo.Height * newLineCount);
-                    lineCount += newLineCount;
-                }
-                else
-                {
-                    firstRowMaxX = x;
-                }
-                CFont.GetFontBitmap(character, fontInfo.FontSize, out fontBitmap);
-                DrawFont(bitmap, x, y, fontBitmap, fontInfo);
+            Int32 maxX = startPosition.X + rect.MinX;
+            Int32 maxY = startPosition.Y + rect.MinY;
+            int lineCount = 0;
 
-                if (y + fontInfo.Height + fontInfo.Height >= rect.MaxY)
+
+            if (maxY + fontInfo.Height < rect.MaxY)
+            {
+                lineCount = 1;
+                for (Int32 i = textInfo.Start, x = maxX; i < textInfo.End; i++, length++)
                 {
-                    break;
+                    var character = textInfo.Text[i];
+                    //强制换行
+                    if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i + 1] == '\n'))
+                    {
+                        if (character == '\r')
+                        {
+                            i++;
+                            length++;
+                        }
+                        maxY += fontInfo.Height;
+                        if (maxY + fontInfo.Height > rect.MaxY)
+                        {
+                            break;
+                        }
+                        x = rect.MinX;//折行的时候，忽略startPosition
+                        lineCount++;
+                        continue;
+                    }
+                    CFont.GetFontBitmap(character, fontInfo.FontSize, out fontBitmap);
+                    if (x + fontBitmap.Width >= rect.MaxX)
+                    {
+                        x = rect.MinX;//折行的时候，忽略startPosition
+                        maxY += fontInfo.Height;
+
+                        if (maxY + fontInfo.Height > rect.MaxY)
+                        {
+                            break;
+                        }
+                        lineCount++;
+                    }
+                    if (bitmap != null)
+                    {
+                        DrawFont(bitmap.Value, x, maxY, fontBitmap, fontInfo);
+                    }
+                    x += fontBitmap.Width;
+                    if (maxX < x)
+                    {
+                        maxX = x;
+                    }
                 }
-                x += fontInfo.Width;
             }
             renderRect = new CRect();
             if (lineCount == 1)
@@ -149,8 +242,8 @@ namespace EInkLib
                 renderRect.MinY = rect.MinX;
                 renderRect.MinY = rect.MinY;
             }
-            renderRect.MaxX = firstRowMaxX + fontInfo.Width;
-            renderRect.MaxY = renderRect.MinY + fontInfo.Height * lineCount;
+            renderRect.MaxX = maxX;
+            renderRect.MaxY = maxY;
             return length;
         }
 
@@ -358,7 +451,7 @@ namespace EInkLib
             //这里改用其他获取Fonts支持的来，
             var validSize = CFont.GetValidFontSize(fontSize);
 
-            CGraphicInits.InitFontInfo(out fontInfo, validSize);
+            CGraphicInits.InitFontInfo(validSize, out fontInfo);
             return fontInfo.FontSize == fontSize;
         }
     }

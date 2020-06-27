@@ -226,7 +226,7 @@ namespace CReader
                                             {
                                                 dstStream.Write(unicodeBuff, lineStart, lineEnd - lineStart);
                                             }
-                                            string text = Encoding.Unicode.GetString(unicodeBuff,lineStart, lineEnd - lineStart);
+                                            //string text = Encoding.Unicode.GetString(unicodeBuff,lineStart, lineEnd - lineStart);
                                             lineStart = lineEnd;
                                         }
                                     }

@@ -1,5 +1,0 @@
-E:\Code\GitHub\RaspberryPi\BookReader\C#\FontLib\obj\Debug\FontLib.csprojAssemblyReference.cache
-E:\Code\GitHub\RaspberryPi\BookReader\C#\FontLib\bin\Debug\FontLib.dll
-E:\Code\GitHub\RaspberryPi\BookReader\C#\FontLib\bin\Debug\FontLib.pdb
-E:\Code\GitHub\RaspberryPi\BookReader\C#\FontLib\obj\Debug\FontLib.dll
-E:\Code\GitHub\RaspberryPi\BookReader\C#\FontLib\obj\Debug\FontLib.pdb

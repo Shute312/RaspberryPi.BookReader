@@ -71,7 +71,7 @@ namespace EInkLib
             using (Stream stream = File.Open(file, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 CFontInfo info;
-                CGraphicInits.InitFontInfo(out info, fontSize);
+                CGraphicInits.InitFontInfo(fontSize, out info);
                 Bitmap image = new Bitmap(info.Width, info.Height);
                 Graphics graphics = Graphics.FromImage(image);
                 Brush brush = new SolidBrush(Foreground);
@@ -125,6 +125,8 @@ namespace EInkLib
                     bitmap.Y = minY;
                     bitmap.InnerWidth = (byte)(maxX > minX ? maxX - minX + 1 : 0);
                     bitmap.InnerHeight = (byte)(maxY > minY ? maxY - minY + 1 : 0);
+                    bitmap.Width =  (byte)info.Width;
+                    bitmap.Height = (byte)info.Height;
                     Int32 fontStride = (bitmap.InnerWidth * bitsPerPixel + 7) / 8;
                     bitmap.Data = new byte[fontStride * bitmap.InnerHeight];
                     if (bitmap.InnerWidth > 0)
@@ -180,7 +182,7 @@ namespace EInkLib
             {
                 byte[] bytes;
                 CFontInfo info;
-                CGraphicInits.InitFontInfo(out info,fontSize);
+                CGraphicInits.InitFontInfo(fontSize, out info);
                 Int32 byteSize = ReadFile(path, out bytes);
                 if (byteSize > 2)
                 {
@@ -198,6 +200,8 @@ namespace EInkLib
                         bitmap.Unicode = (ushort)((bytes[byteIndex] << 8) | (bytes[byteIndex + 1]));
                         bitmap.X = bytes[byteIndex + 2];
                         bitmap.Y = bytes[byteIndex + 3];
+                        bitmap.Width = (byte)info.Width;
+                        bitmap.Height = (byte)info.Height;
                         bitmap.InnerWidth = bytes[byteIndex + 4];
                         bitmap.InnerHeight = bytes[byteIndex + 5];
                         //Int32 dataLength = (bitmap.InnerWidth * bitmap.InnerHeight * bpp + 7) >> 3;

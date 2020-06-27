@@ -21,8 +21,8 @@ namespace CUI
         /// <summary>
         /// 用到Info中，缓存的哪个位置
         /// </summary>
-        public Int32 BuffStart { get; set; }
-        public Int32 BuffEnd { get; set; }
+        public Int32 UnicodeStart { get; set; }
+        public Int32 UnicodeEnd { get; set; }
 
         ////当前页的每一行都标记出来，方便上下翻页
         //public CTextInfo[] Lines;

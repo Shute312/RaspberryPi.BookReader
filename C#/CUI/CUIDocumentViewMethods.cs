@@ -18,7 +18,7 @@ namespace CUI
         {
             //document.Info.StreamPositon += (document.BuffEnd - document.BuffStart) << 1;
             //这里不对，会导致无法实现保留n行的逻辑
-            document.BuffStart = document.BuffEnd;
+            document.UnicodeStart = document.UnicodeEnd;
             return true;
         }
 
@@ -45,42 +45,81 @@ namespace CUI
                 {
                     CTextInfo textInfo = new CTextInfo()
                     {
-                        Start = document.BuffStart,
+                        Start = document.UnicodeStart,
                         End = document.Info.UnicodeSize,
                         Length = document.Info.UnicodeSize,
                         Text = (char*)document.Info.Unicodes//todo 这里要从buff中读取转码
 
                     };
                     CFontInfo fontInfo;
-                    CG.GetValidFontSize(child.FontSize, out fontInfo); ;
-                    CPoint startPosition;
-                    //todo未完成的段落，不应该有首行空两格的逻辑
-                    if (document.Style.ParagraphFirstLineMarginLeft > 0)
+                    CG.GetValidFontSize(child.Style.FontSize, out fontInfo); ;
+
+                    var validRect = new CRect
                     {
-                        if (document.BuffStart > 4)
-                        { 
-                        }
-                        startPosition = new CPoint() { X = document.Style.ParagraphFirstLineMarginLeft, Y = 0 };
-                    }
-                    else
+                        MinX = contentRect.MinX,
+                        MaxX = contentRect.MaxX,
+                        MinY = contentRect.MinY,
+                        MaxY = contentRect.MaxY
+                    };
+                    //读取一行行文本，然后一直显示到无法显示      
+                    Int32 lineEnd = document.UnicodeStart;
+                    document.UnicodeEnd = document.UnicodeStart;
+                    Int32 lineStart = lineEnd;
+                    Int32 limited = document.Info.UnicodeSize - 1;
+                    ushort* pUnicodes = document.Info.Unicodes;
+                    for (int i = document.UnicodeStart; i < document.Info.UnicodeSize; i++)
                     {
-                        startPosition = new CPoint() { X = 0, Y = 0 };
-                    }
-                    CRect textRect = new CRect();
-                    var renderTextLength = CG.MeasureText(textInfo, fontInfo, startPosition, contentRect, out textRect);
-                    if (renderTextLength > 0)
-                    {
-                        if (renderTextLength == child.TextSize)//可以完整显示所有内容
+                        ushort unicode = pUnicodes[i];
+                        lineEnd++;
+                        if (unicode == '\n' || (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n') || i == limited)
                         {
-                            //获得绘制需要的空间后，居中显示
-                            CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, contentRect, startPosition, out textRect);
-                        }
-                        else
-                        {
-                            //显示不全，而且只能显示一行，则垂直方向上居中
-                            //而因为不够显示的话，所以水平方向上，左对齐
-                            int textLength = CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, contentRect, startPosition, out textRect);
-                            document.BuffEnd = document.BuffStart + textLength;
+                            if (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n')
+                            {
+                                i++;
+                                lineEnd++;
+                            }
+                            if (lineEnd > lineStart)
+                            {
+                                //行首空两格
+                                CPoint startPosition = new CPoint() { X = 0, Y = 0 };
+                                if (document.Style.ParagraphFirstLineMarginLeft > 0)
+                                {
+                                    if (document.UnicodeStart == 0)
+                                    {
+                                        startPosition = new CPoint() { X = document.Style.ParagraphFirstLineMarginLeft, Y = 0 };
+                                    }
+                                    else if (document.Info.Unicodes[lineStart - 1] == '\n')
+                                    {
+                                        startPosition = new CPoint() { X = document.Style.ParagraphFirstLineMarginLeft, Y = 0 };
+                                    }
+                                }
+                                //todo读到一段后，这里应该一行行的绘制，更容易实现各种效果
+                                //向上翻页也可以借鉴这个思路，逆向操作
+
+
+                                //显示不全，而且只能显示一行，则垂直方向上居中
+                                //而因为不够显示的话，所以水平方向上，左对齐
+                                CRect textRect = new CRect();
+                                textInfo.Start = lineStart;
+                                textInfo.End = lineEnd;
+                                int textLength = CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, validRect, startPosition, out textRect);
+
+
+
+                                validRect.MinY = textRect.MaxY;
+                                if (validRect.MinY >= contentRect.MaxY)
+                                {
+                                    var arr = new char[textInfo.End - textInfo.Start];
+                                    for (int m = 0; m < arr.Length; m++)
+                                    {
+                                        arr[m] = textInfo.Text[m + textInfo.Start];
+                                    }
+                                    var text = new string(arr);
+                                    break;
+                                }
+                                document.UnicodeEnd += textLength;
+                            }
+                            lineStart = lineEnd;
                         }
                     }
                 }

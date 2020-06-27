@@ -17,12 +17,20 @@ namespace CUI
             view = new CUIView();
             view.UIType = type;
             view.HashCode = ++_ViewUniqueCode;//从1开始
-            view.BackColor = 0xFF000000;//无背景色
-            view.BorderColor = 0xFF000000;//无边框
-            view.BorderThickness = 0;//无边框
             CFontInfo fontInfo;
             CG.GetValidFontSize(CUIEnvironment.FontSize, out fontInfo);
-            view.FontSize = fontInfo.FontSize;
+            view.Style.FontSize = fontInfo.FontSize;
+            view.Style.FontColor = 0x000000FF;//文本颜色
+            view.Style.BackColor = 0xFF0000EE;//无背景色
+            view.Style.BorderColor = 0xFF000033;//无边框
+            view.Style.BorderThickness = 0;//无边框
+
+            view.ActiveStyle.BackColor =  view.Style.BackColor;
+            view.ActiveStyle.BorderColor = view.Style.FontColor;
+            view.ActiveStyle.BorderThickness = view.Style.BorderThickness;
+            view.ActiveStyle.FontSize = view.Style.FontSize;
+            view.ActiveStyle.FontColor = view.Style.FontColor;
+
             view.IsVisible = true;
             Int32 charWidth = fontInfo.Width;//一个字符要占多大空间
             Int32 baseWidth = charWidth * 8;//至少放n个字符;

@@ -29,10 +29,10 @@ namespace CUI
         //public string Text;//for C 改为ushort*
         public char* Text;//for C 改为ushort*
         public Int32 TextSize;//文字的长度，注意：采用char可能不能正确显示，要用ushort才能显示
-        public Int32 FontSize;//字号
+        
+        //todo 抽象出Style的概念，空间激活(focus)时，有额外的Style
+        public CUIStyle Style;
+        public CUIStyle ActiveStyle;//激活、Focused时展示的样式
 
-        public UInt32 BackColor;//背景色(高8位为0xFF时，因全透明而被忽略)
-        public Int32 BorderThickness;//边框线条粗细
-        public UInt32 BorderColor;//边框线条颜色(高8位为0xFF时，因全透明而被忽略)
     }
 }

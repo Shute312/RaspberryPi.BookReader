@@ -120,17 +120,22 @@ namespace BookReader
                 {
                     for (int col = 0; col < COLS; col++)
                     {
-                        var text = string.Format("({0},{0})", col, row);
+                        var text = string.Format("({0},{1})", col, row);
                         var btn = CUIViewMethods.Create(CUIViewType.Button);
                         //btn.Text = Utils.StringToUshortArray(text);
                         btn.Text = Utils.ToCharPointer(text);
                         btn.TextSize = text.Length;
                         btn.Size = new CSize() { Width = 190, Height = 50 };
                         btn.Size.Height = 50;
-                        btn.ForeColor = 0xFF;
-                        btn.BackColor = 0x30;
-                        btn.BorderColor = 0xC0;
-                        btn.BorderThickness = 1;
+                        btn.Style.FontColor = 0xFF;
+                        btn.Style.BackColor = 0x30;
+                        btn.Style.BorderColor = 0xC0;
+                        btn.Style.BorderThickness = 1;
+
+                        btn.ActiveStyle.FontColor = 0xFF;
+                        btn.ActiveStyle.BackColor = 0x10;
+                        btn.ActiveStyle.BorderColor = 0x33;
+                        btn.ActiveStyle.BorderThickness = 1;
                         btn.Location = new CPoint() { X = padding.Left + (padding.Left + btn.Size.Width) * col,
                             Y = padding.Top + (padding.Top + btn.Size.Height) * row };
                         CUIFrameMethods.AddToFrame(ref frame, btn);
@@ -141,6 +146,7 @@ namespace BookReader
                 CUIFrameMethods.SetFocus(ref frame, button);
 
                 CUIApp.Run(in frame);
+                CUIFrameMethods.Refresh(ref frame);
             }
             else {
                 CUIApp.GetActivedFrame(out frame);

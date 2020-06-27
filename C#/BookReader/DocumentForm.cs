@@ -61,12 +61,13 @@ namespace BookReader
             var view = CUIViewMethods.Create(CUIViewType.Document);
             //view.FontSize = 12;
             CFontInfo fontInfo;
-            CG.GetValidFontSize(view.FontSize, out fontInfo);
+            CG.GetValidFontSize(view.Style.FontSize, out fontInfo);
             view.Size = new CSize() { Width = Picture.Width - padding.Left - padding.Right, Height = Picture.Height - padding.Top - padding.Bottom };
-            view.ForeColor = 0xFF;
-            view.BackColor = 0x10;
-            view.BorderColor = 0xFF0000C0;
-            view.BorderThickness = 0;
+            view.Style.FontSize = fontInfo.FontSize;
+            view.Style.FontColor = 0xFF;
+            view.Style.BackColor = 0x10;
+            view.Style.BorderColor = 0xFF0000C0;
+            view.Style.BorderThickness = 0;
             //view.Text = (char*)documentInfo.Buffer;
             //view.TextSize = documentInfo.BufferSize;
             view.Location = new CPoint()
@@ -176,7 +177,7 @@ namespace BookReader
             var info = view.Info;
             if (info.StreamPositon > info.DocumentOffset)
             {
-                if (view.BuffStart < PRE_SIZE)
+                if (view.UnicodeStart << 1 < PRE_SIZE)
                 {
                     //要向前加载
                     throw new NotImplementedException();
@@ -184,7 +185,7 @@ namespace BookReader
             }
             else
             {
-                if (view.BuffEnd > view.Info.UnicodeSize - PRE_SIZE)
+                if (view.UnicodeEnd > view.Info.UnicodeSize - (PRE_SIZE >> 1))
                 {
                     //要向后加载
                     throw new NotImplementedException();

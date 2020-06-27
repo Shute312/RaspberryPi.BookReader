@@ -36,22 +36,34 @@ namespace CCommonLib
 
     public unsafe struct CDocumentInfo
     {
-        public Int32 DocumentOffset;//文档从第几个字节才是正式内容
+        /// <summary>
+        /// 文档从第几个字节才是正式内容
+        /// </summary>
+        public Int32 DocumentOffset;
+
         /// <summary>
         /// 当前显示的内容，是在第几个字节
         /// </summary>
         public Int32 StreamPositon;
 
-        public Int32 UnicodeSize;//当前Buffer中的有效字符(ushort)个数
+        /// <summary>
+        /// 当前Buffer中的有效字符(ushort)个数
+        /// </summary>
+        public Int32 UnicodeSize;
 
-        public ushort* Unicodes;//字符
+        /// <summary>
+        /// 字符
+        /// </summary>
+        public ushort* Unicodes;
 
         /// <summary>
         /// 文件长度(字节),-1表示未知长度
         /// </summary>
         public Int32 DocSize;
 
-        //文件是否到底了
+        /// <summary>
+        /// 文件是否到底了
+        /// </summary>
         public bool IsEnd;
 
         public string Path;//文件路径
