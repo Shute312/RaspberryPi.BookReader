@@ -38,7 +38,7 @@ namespace BookReader
             //应该做一次文档格式转换，比如，转为Unicode编码，文档的前128个字节固定空出来；
 
             //todo 加载时，应该往前一段距离加载，将起点落在10-90%之间
-            DocumentInfo documentInfo = new DocumentInfo();
+            CDocumentInfo documentInfo = new CDocumentInfo();
             //using (Stream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read))
             //{
             //    Int32 buffSize = BUFF_SIZE;
@@ -184,7 +184,7 @@ namespace BookReader
             }
             else
             {
-                if (view.BuffEnd > view.Info.BufferSize - PRE_SIZE)
+                if (view.BuffEnd > view.Info.UnicodeSize - PRE_SIZE)
                 {
                     //要向后加载
                     throw new NotImplementedException();
@@ -194,7 +194,7 @@ namespace BookReader
             return false;//不需要重新加载
         }
 
-        private unsafe bool LoadDocument(ref DocumentInfo info, in string path, Int32 startPosition)
+        private unsafe bool LoadDocument(ref CDocumentInfo info, in string path, Int32 startPosition)
         {
             string cachePath;
             Contract.Assert(CReader.CReader.GetCachePath(path, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache"),out cachePath));
@@ -228,17 +228,17 @@ namespace BookReader
                     length--;
                 }
 
-                info.FileSize = (Int32)stream.Length;
-                if (info.Buffer != null)
+                info.DocSize = (Int32)stream.Length;
+                if (info.Unicodes != null)
                 {
-                    Marshal.FreeHGlobal((IntPtr)info.Buffer);
+                    Marshal.FreeHGlobal((IntPtr)info.Unicodes);
                 }
-                info.Buffer = (ushort*)Marshal.AllocHGlobal(buffSize);
-                info.BufferSize = length>>1;
+                info.Unicodes = (ushort*)Marshal.AllocHGlobal(buffSize);
+                info.UnicodeSize = length>>1;
                 info.Path = path;
-                info.IsEnd = info.StreamPositon + buffSize >= info.FileSize;
+                info.IsEnd = info.StreamPositon + buffSize >= info.DocSize;
                 stream.Position = info.StreamPositon;
-                byte* p = (byte*)info.Buffer;
+                byte* p = (byte*)info.Unicodes;
                 for (int i = 0; i < length; i++)
                 {
                     *(p + i) = buff[i];

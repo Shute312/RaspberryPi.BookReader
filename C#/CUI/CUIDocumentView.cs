@@ -14,7 +14,7 @@ namespace CUI
 
         public CUIDocumentStyle Style { get; set; }
 
-        public DocumentInfo Info { get; set; }
+        public CDocumentInfo Info { get; set; }
 
         public Charset Charset;
 

@@ -106,7 +106,7 @@ namespace EInkLib
                 var character = textInfo.Text[i];
                 Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
                 //强制换行
-                if (character == '\n' || (character == '\r' && i < textInfo.End - 1) && character == '\n')
+                if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i+1] == '\n'))
                 {
                     if (character == '\r')
                     {

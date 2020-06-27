@@ -34,7 +34,7 @@ namespace CCommonLib
         public Int32 Bottom;
     }
 
-    public unsafe struct DocumentInfo
+    public unsafe struct CDocumentInfo
     {
         public Int32 DocumentOffset;//文档从第几个字节才是正式内容
         /// <summary>
@@ -42,14 +42,14 @@ namespace CCommonLib
         /// </summary>
         public Int32 StreamPositon;
 
-        public Int32 BufferSize;//当前Buffer中的有效字符(ushort)个数
+        public Int32 UnicodeSize;//当前Buffer中的有效字符(ushort)个数
 
-        public ushort* Buffer;//字符
+        public ushort* Unicodes;//字符
 
         /// <summary>
         /// 文件长度(字节),-1表示未知长度
         /// </summary>
-        public Int32 FileSize;
+        public Int32 DocSize;
 
         //文件是否到底了
         public bool IsEnd;

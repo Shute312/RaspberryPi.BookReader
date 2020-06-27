@@ -136,7 +136,7 @@ namespace CReader
                 byte[] unicodeBuff = new byte[buffSize * 2];
                 fixed (byte* unicodeBuffPointer = unicodeBuff)
                 {
-                    ushort* p = (ushort*)unicodeBuffPointer;
+                    ushort* pUnicodes = (ushort*)unicodeBuffPointer;
                     fixed (byte* utf8BuffPointer = utf8Buff)
                     {
                         using (Stream srcStream = File.Open(srcPath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -149,7 +149,8 @@ namespace CReader
                                     Int32 utf8Length = srcLength + Remaind;
                                     Int32 utf8ReadSize = 0;
                                     Int32 unicodeWriteSize = 0;
-                                    DecodeUtf8(utf8BuffPointer, 0, utf8Length, out utf8ReadSize, ref p, buffSize, out unicodeWriteSize);
+                                    //todo 考虑去掉行首的N个空格
+                                    DecodeUtf8(utf8BuffPointer, 0, utf8Length, out utf8ReadSize, ref pUnicodes, buffSize, out unicodeWriteSize);
 
                                     //todo 剩下一两个字节，要放到头部，
                                     if (utf8ReadSize < utf8Length)
@@ -160,7 +161,75 @@ namespace CReader
                                             utf8Buff[i] = utf8Buff[utf8ReadSize + i];
                                         }
                                     }
-                                    dstStream.Write(unicodeBuff, 0, unicodeWriteSize << 1);
+                                    //Int32 unicodeWriteBuffSize = unicodeWriteSize << 1;//一个Unicode编码是2个byte
+                                    //Int32 offset = 0;
+                                    //Int32 currSize = 0;
+                                    //注：下方算法，会错误将句中的空格也给去掉，无伤大雅，暂时不处理
+                                    //for (int i = 0; i < unicodeWriteSize; i++)
+                                    //{
+                                    //    ushort unicode = pUnicodes[i];
+                                    //    var ch = (char)unicode;
+                                    //    //if (unicode == ' ' || unicode == '　' || unicode == '	')//半角空格+全角空格+tab
+                                    //    if (unicode == 0x20 || unicode == 0x3000 || unicode == 0x9)//半角空格+全角空格+tab
+                                    //    {
+                                    //        offset += 2;//跳2个字节
+                                    //    }
+                                    //    else {
+                                    //        currSize += 2;
+
+                                    //        //换行处理
+                                    //        if (unicode == '\n' || (unicode == '\r' && i < unicodeWriteSize - 1 && pUnicodes[i+1] == '\n'))
+                                    //        {
+                                    //            if (unicode == '\r')
+                                    //            {
+                                    //                i++;
+                                    //                currSize += 2;
+                                    //            }
+                                    //            dstStream.Write(unicodeBuff, offset, currSize);
+                                    //            offset = offset + currSize;
+                                    //            currSize = 0;
+                                    //        }
+                                    //    }
+                                    //}
+                                    //if (currSize > 0)
+                                    //{
+                                    //    dstStream.Write(unicodeBuff, offset, currSize);
+                                    //}
+
+                                    Int32 unicodeWriteBuffSize = unicodeWriteSize << 1;//一个Unicode编码是2个byte
+                                    Int32 lineEnd = 0;
+                                    Int32 lineStart = lineEnd;
+                                    Int32 limited = unicodeWriteSize - 1;
+                                    for (int i = 0; i < unicodeWriteSize; i++)
+                                    {
+                                        ushort unicode = pUnicodes[i];
+                                        lineEnd += 2;
+                                        if (unicode == '\n' || (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n') || i == limited)
+                                        {
+                                            if (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n')
+                                            {
+                                                i++;
+                                                lineEnd += 2;
+                                            }
+                                            for (int k = lineStart; k < lineEnd; k+=2)
+                                            {
+                                                ushort ch = pUnicodes[k>>1];
+                                                if (ch == 0x20 || ch == 0x3000 || ch == 0x9)//半角空格+全角空格+tab
+                                                {
+                                                    lineStart += 2;//跳2个字节
+                                                }
+                                                else {
+                                                    break;
+                                                }
+                                            }
+                                            if (lineEnd > lineStart)
+                                            {
+                                                dstStream.Write(unicodeBuff, lineStart, lineEnd - lineStart);
+                                            }
+                                            string text = Encoding.Unicode.GetString(unicodeBuff,lineStart, lineEnd - lineStart);
+                                            lineStart = lineEnd;
+                                        }
+                                    }
                                 }
                                 else
                                 {

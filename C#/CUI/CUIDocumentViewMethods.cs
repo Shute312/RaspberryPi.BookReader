@@ -46,9 +46,9 @@ namespace CUI
                     CTextInfo textInfo = new CTextInfo()
                     {
                         Start = document.BuffStart,
-                        End = document.Info.BufferSize,
-                        Length = document.Info.BufferSize,
-                        Text = (char*)document.Info.Buffer//todo 这里要从buff中读取转码
+                        End = document.Info.UnicodeSize,
+                        Length = document.Info.UnicodeSize,
+                        Text = (char*)document.Info.Unicodes//todo 这里要从buff中读取转码
 
                     };
                     CFontInfo fontInfo;
@@ -73,17 +73,11 @@ namespace CUI
                         if (renderTextLength == child.TextSize)//可以完整显示所有内容
                         {
                             //获得绘制需要的空间后，居中显示
-                            startPosition.X = (contentRect.MaxX - textRect.MaxX) / 2;
-                            startPosition.Y = (contentRect.MaxY - textRect.MaxY) / 2;
                             CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, contentRect, startPosition, out textRect);
                         }
                         else
                         {
                             //显示不全，而且只能显示一行，则垂直方向上居中
-                            if (textRect.MaxY < contentRect.MaxY)
-                            {
-                                startPosition.Y = (contentRect.MaxY - textRect.MaxY) / 2;
-                            }
                             //而因为不够显示的话，所以水平方向上，左对齐
                             int textLength = CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, contentRect, startPosition, out textRect);
                             document.BuffEnd = document.BuffStart + textLength;
