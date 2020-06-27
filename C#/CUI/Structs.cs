@@ -13,11 +13,13 @@ namespace CUI
         //public Int32 PageMarginBottom;
         //public Int32 PageMarginLeft;
         //public Int32 PageMarginRight;
-        public Int32 MarginTop;//字符间距
+        public Int32 MarginTop;//字符间距(未设计好，可能要改成Weight方案)
         public Int32 MarginBottom;
         public Int32 MarginLeft;
         public Int32 MarginRight;
-        public Int32 ParagraphFirstLineMarginLeft;//每一段的首行的偏移量
+        public Int32 SectionFirstLineMarginLeft;//每一段的首行的偏移量
+        //public Int32 SectionMarginTop;
+        //public Int32 SectionMarginBottom;
         public byte RemainLines { get; set; }// 翻页时，保留上一页多少行
     }
 

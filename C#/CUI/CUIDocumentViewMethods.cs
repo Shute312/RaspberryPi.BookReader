@@ -2,6 +2,7 @@
 using CGraphic;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 
@@ -16,9 +17,7 @@ namespace CUI
 
         public static bool PageDown(ref CUIDocumentView document)
         {
-            //document.Info.StreamPositon += (document.BuffEnd - document.BuffStart) << 1;
-            //这里不对，会导致无法实现保留n行的逻辑
-            document.UnicodeStart = document.UnicodeEnd;
+            document.UnicodeStart = document.NextPageUnicodeStart;
             return true;
         }
 
@@ -43,6 +42,8 @@ namespace CUI
                 CUIDocumentView document = (CUIDocumentView)child.Properties;
                 if (!document.Info.IsEnd && child.ForeColor >> 24 != 0xFF)
                 {
+                    Contract.Assert(document.Style.RemainLines < 3);
+
                     CTextInfo textInfo = new CTextInfo()
                     {
                         Start = document.UnicodeStart,
@@ -61,66 +62,102 @@ namespace CUI
                         MinY = contentRect.MinY,
                         MaxY = contentRect.MaxY
                     };
-                    //读取一行行文本，然后一直显示到无法显示      
-                    Int32 lineEnd = document.UnicodeStart;
+                    //读取一段文本，然后一直显示到无法显示      
+                    Int32 sectionEnd = document.UnicodeStart;
                     document.UnicodeEnd = document.UnicodeStart;
-                    Int32 lineStart = lineEnd;
+                    Int32 sectionStart = sectionEnd;
                     Int32 limited = document.Info.UnicodeSize - 1;
                     ushort* pUnicodes = document.Info.Unicodes;
+
+                    Int32 currentY = contentRect.MinX;//用于逐行渲染
+                    Int32 lineCount = 0;
+                    document.PrePageUnicodeEnd = document.UnicodeStart;
+                    Int32[] lastTwoPosition = new Int32[2] { document.UnicodeStart, document.UnicodeStart };//记录最后两行的位置，用于翻页显示上一页的一两行
                     for (int i = document.UnicodeStart; i < document.Info.UnicodeSize; i++)
                     {
                         ushort unicode = pUnicodes[i];
-                        lineEnd++;
+                        sectionEnd++;
                         if (unicode == '\n' || (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n') || i == limited)
                         {
                             if (unicode == '\r' && i < limited && pUnicodes[i + 1] == '\n')
                             {
                                 i++;
-                                lineEnd++;
+                                sectionEnd++;
                             }
-                            if (lineEnd > lineStart)
+                            if (sectionEnd > sectionStart)
                             {
                                 //行首空两格
                                 CPoint startPosition = new CPoint() { X = 0, Y = 0 };
-                                if (document.Style.ParagraphFirstLineMarginLeft > 0)
+                                bool isSectionStart = false;//是不是段落的起始位置
+                                if (document.UnicodeStart == 0 || document.Info.Unicodes[sectionStart - 1] == '\n')
                                 {
-                                    if (document.UnicodeStart == 0)
+                                    isSectionStart = true;
+                                }
+                                if (isSectionStart)
+                                {
+                                    startPosition.X = document.Style.SectionFirstLineMarginLeft;
+                                    //currentY += document.Style.SectionMarginTop;
+                                }
+
+                                while (true)
+                                {
+                                    validRect.MinY = currentY + document.Style.LineMarginTop;
+                                    validRect.MaxY = validRect.MinY + fontInfo.Height + 1;//逐行绘制
+                                    currentY = currentY + document.Style.LineMarginTop + fontInfo.Height + document.Style.LineMarginBottom;
+                                    if (validRect.MaxY > contentRect.MaxY)
                                     {
-                                        startPosition = new CPoint() { X = document.Style.ParagraphFirstLineMarginLeft, Y = 0 };
+                                        break;
                                     }
-                                    else if (document.Info.Unicodes[lineStart - 1] == '\n')
+                                    lineCount++;
+                                    CRect textRect = new CRect();
+                                    textInfo.Start = sectionStart;
+                                    textInfo.End = sectionEnd;
+                                    int textLength = CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, validRect, startPosition, out textRect);
+                                    if (textLength == 0)
                                     {
-                                        startPosition = new CPoint() { X = document.Style.ParagraphFirstLineMarginLeft, Y = 0 };
+                                        break;
+                                    }
+                                    validRect.MinY = textRect.MaxY;
+                                    if (validRect.MinY >= contentRect.MaxY)
+                                    {
+                                        break;
+                                    }
+                                    lastTwoPosition[1] = lastTwoPosition[0];
+                                    lastTwoPosition[0] = document.UnicodeEnd;
+                                    document.UnicodeEnd += textLength;
+                                    sectionStart += textLength;
+                                    if (sectionStart >= sectionEnd)
+                                    {
+                                        break;
+                                    }
+                                    startPosition.X = 0;//只有第一行要空2个格子
+                                    if (lineCount == document.Style.RemainLines)
+                                    {
+                                        document.PrePageUnicodeEnd = document.UnicodeEnd;
                                     }
                                 }
-                                //todo读到一段后，这里应该一行行的绘制，更容易实现各种效果
-                                //向上翻页也可以借鉴这个思路，逆向操作
 
-
-                                //显示不全，而且只能显示一行，则垂直方向上居中
-                                //而因为不够显示的话，所以水平方向上，左对齐
-                                CRect textRect = new CRect();
-                                textInfo.Start = lineStart;
-                                textInfo.End = lineEnd;
-                                int textLength = CG.DrawText(ref layer.Bitmap, textInfo, fontInfo, validRect, startPosition, out textRect);
-
-
-
-                                validRect.MinY = textRect.MaxY;
-                                if (validRect.MinY >= contentRect.MaxY)
+                                if (currentY >= contentRect.MaxY)
                                 {
-                                    var arr = new char[textInfo.End - textInfo.Start];
-                                    for (int m = 0; m < arr.Length; m++)
-                                    {
-                                        arr[m] = textInfo.Text[m + textInfo.Start];
-                                    }
-                                    var text = new string(arr);
+                                    //var arr = new char[textInfo.End - textInfo.Start];
+                                    //for (int m = 0; m < arr.Length; m++)
+                                    //{
+                                    //    arr[m] = textInfo.Text[m + textInfo.Start];
+                                    //}
+                                    //var text = new string(arr);
                                     break;
                                 }
-                                document.UnicodeEnd += textLength;
                             }
-                            lineStart = lineEnd;
+                            sectionStart = sectionEnd;
                         }
+                    }
+                    if (document.Style.RemainLines > 0)
+                    {
+                        document.NextPageUnicodeStart = lastTwoPosition[document.Style.RemainLines - 1];
+                    }
+                    else
+                    {
+                        document.NextPageUnicodeStart = document.UnicodeEnd;
                     }
                 }
             }

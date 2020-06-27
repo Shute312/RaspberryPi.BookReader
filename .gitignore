@@ -9,3 +9,9 @@
 /C#/BookReader/.vs/BookReader/v16/Server/sqlite3
 /C#/BookReader/bin/Debug
 /C#/BookReader/obj/Debug
+*.dll
+*.pdb
+*.cs
+*.cache
+*.txt
+*.CopyComplete

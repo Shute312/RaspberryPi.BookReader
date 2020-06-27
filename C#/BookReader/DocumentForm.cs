@@ -83,8 +83,9 @@ namespace BookReader
                 MarginRight = 0,
                 MarginTop = 0,
                 MarginBottom = 0,
-                ParagraphFirstLineMarginLeft = fontInfo.Width * 2,
-                LineMarginTop = fontInfo.Height >> 1,
+                SectionFirstLineMarginLeft = fontInfo.Width * 2,
+                //LineMarginTop = fontInfo.Height >> 1,
+                LineMarginTop = 2,
                 LineMarginBottom = 0,
                 RemainLines = 1,
             };

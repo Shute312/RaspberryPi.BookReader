@@ -13,66 +13,68 @@ namespace EInkLib
     {
         public unsafe static Int32 MeasureText(in CTextInfo textInfo, in CGraphic.CFontInfo fontInfo, in CPoint startPosition, in CRect rect, out CRect renderRect)
         {
-            Contract.Assert(startPosition.X >= 0 && startPosition.Y >= 0
-                && startPosition.X <= (rect.MaxX - rect.MinX) && startPosition.Y <= (rect.MaxY - rect.MinY));
-            /*
-             * 需要支持的情况:
-             * 1、单行
-             * 2、单行，开头空2格
-             * 3、多行
-             * 4、多行，首行空2格
-             */
-            Int32 firstRowMaxX = 0;//首行的宽度
-            Int32 length = 0;
-            Int32 lineCount = 1;
-            for (Int32 i = textInfo.Start, x = startPosition.X + rect.MinX, y = startPosition.Y + rect.MinY; i < textInfo.End; i++, length++)
-            {
-                var character = textInfo.Text[i];
-                Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
-                //强制换行
-                if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i + 1] == '\n'))
-                {
-                    if (character == '\r')
-                    {
-                        i++;
-                        length++;
-                    }
-                    newLineCount++;
-                }
-                if (x + fontInfo.Width >= rect.MaxX)
-                {
-                    newLineCount++;
-                }
-                if (newLineCount > 0)
-                {
-                    x = rect.MinX;
-                    y += (fontInfo.Height * newLineCount);
-                    lineCount += newLineCount;
-                }
-                else
-                {
-                    firstRowMaxX = x;
-                }
-                if (y + fontInfo.Height + fontInfo.Height * newLineCount >= rect.MaxY)
-                {
-                    break;
-                }
-                x += fontInfo.Width;
-            }
-            renderRect = new CRect();
-            if (lineCount == 1)
-            {
-                renderRect.MinY = startPosition.X + rect.MinX;
-                renderRect.MinY = startPosition.Y + rect.MinY;
-            }
-            else
-            {
-                renderRect.MinY = rect.MinX;
-                renderRect.MinY = rect.MinY;
-            }
-            renderRect.MaxX = firstRowMaxX + fontInfo.Width;
-            renderRect.MaxY = renderRect.MinY + fontInfo.Height * lineCount;
-            return length;
+            //Contract.Assert(startPosition.X >= 0 && startPosition.Y >= 0
+            //    && startPosition.X <= (rect.MaxX - rect.MinX) && startPosition.Y <= (rect.MaxY - rect.MinY));
+            ///*
+            // * 需要支持的情况:
+            // * 1、单行
+            // * 2、单行，开头空2格
+            // * 3、多行
+            // * 4、多行，首行空2格
+            // */
+            //Int32 firstRowMaxX = 0;//首行的宽度
+            //Int32 length = 0;
+            //Int32 lineCount = 1;
+            //for (Int32 i = textInfo.Start, x = startPosition.X + rect.MinX, y = startPosition.Y + rect.MinY; i < textInfo.End; i++, length++)
+            //{
+            //    var character = textInfo.Text[i];
+            //    Int32 newLineCount = 0;//要换多少行，如果文本已经满一行，又遇到换行符，目前会换两行
+            //    //强制换行
+            //    if (character == '\n' || (character == '\r' && i < textInfo.End - 1 && textInfo.Text[i + 1] == '\n'))
+            //    {
+            //        if (character == '\r')
+            //        {
+            //            i++;
+            //            length++;
+            //        }
+            //        newLineCount++;
+            //    }
+            //    if (x + fontInfo.Width >= rect.MaxX)
+            //    {
+            //        newLineCount++;
+            //    }
+            //    if (newLineCount > 0)
+            //    {
+            //        x = rect.MinX;
+            //        y += (fontInfo.Height * newLineCount);
+            //        lineCount += newLineCount;
+            //    }
+            //    else
+            //    {
+            //        firstRowMaxX = x;
+            //    }
+            //    if (y + fontInfo.Height + fontInfo.Height * newLineCount >= rect.MaxY)
+            //    {
+            //        break;
+            //    }
+            //    x += fontInfo.Width;
+            //}
+            //renderRect = new CRect();
+            //if (lineCount == 1)
+            //{
+            //    renderRect.MinY = startPosition.X + rect.MinX;
+            //    renderRect.MinY = startPosition.Y + rect.MinY;
+            //}
+            //else
+            //{
+            //    renderRect.MinY = rect.MinX;
+            //    renderRect.MinY = rect.MinY;
+            //}
+            //renderRect.MaxX = firstRowMaxX + fontInfo.Width;
+            //renderRect.MaxY = renderRect.MinY + fontInfo.Height * lineCount;
+            //return length;
+
+            return DrawTextInternal(null, textInfo, fontInfo, rect, startPosition, out renderRect);
         }
 
         /// <summary>
@@ -202,6 +204,7 @@ namespace EInkLib
                         maxY += fontInfo.Height;
                         if (maxY + fontInfo.Height > rect.MaxY)
                         {
+                            length++;//break会导致for不执行最后的length++
                             break;
                         }
                         x = rect.MinX;//折行的时候，忽略startPosition
