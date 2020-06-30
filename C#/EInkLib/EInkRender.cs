@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using CCommonLib;
 using CGraphic;
@@ -232,6 +234,10 @@ namespace EInkLib
                     {
                         maxX = x;
                     }
+                    if (i == textInfo.End - 1)
+                    {
+                        maxY += fontInfo.Height;
+                    }
                 }
             }
             renderRect = new CRect();
@@ -297,8 +303,45 @@ namespace EInkLib
 
         public unsafe static void DrawToBitmap(ref Bitmap image, in CBitmap bitmap, in CRect drawRect)
         {
+            Contract.Assert(image.PixelFormat == PixelFormat.Format24bppRgb);
+            var rect = new Rectangle(0, 0, image.Width, image.Height);
+            var bitmapData = image.LockBits(rect, ImageLockMode.ReadOnly, image.PixelFormat);
+            Int32 bytesPerPixel = 3;
+            var dstBuff = Enumerable.Repeat<byte>(byte.MaxValue,
+                image.Width * image.Height * bytesPerPixel).ToArray();
+            DrawToBitmap(ref dstBuff, image.Width, image.Height, bytesPerPixel, bitmap, drawRect);
+            Marshal.Copy(dstBuff, 0, bitmapData.Scan0, dstBuff.Length);
+            image.UnlockBits(bitmapData);
+            //byte eInkBpp = bitmap.BitsPerPixel;
+            //CRect rect = new CRect() { MinX = 0, MinY = 0, MaxX = image.Width, MaxY = image.Height };
+            //ValueFuns.MinRect(rect, drawRect, ref rect);
+            //for (Int32 y = rect.MinY; y < rect.MaxY; y++)
+            //{
+            //    for (Int32 x = rect.MinX; x < rect.MaxX; x++)
+            //    {
+            //        byte value;
+            //        GetPixel(bitmap.Buffer, bitmap.Width, eInkBpp, x, y, out value);
+            //        if (eInkBpp != 8)
+            //        {
+            //            if (eInkBpp == 4)
+            //            {
+            //                value <<= 4;
+            //            }
+            //            else
+            //            {
+            //                throw new NotImplementedException();
+            //            }
+            //        }
+            //        value = (byte)(~value);
+            //        image.SetPixel(x, y, Color.FromArgb(value, value, value));
+            //    }
+            //}
+        }
+
+        public unsafe static void DrawToBitmap(ref byte[] pixels, in Int32 width, in Int32 height, in Int32 bytesPerPixel, in CBitmap bitmap, in CRect drawRect)
+        {
             byte eInkBpp = bitmap.BitsPerPixel;
-            CRect rect = new CRect() { MinX = 0, MinY = 0, MaxX = image.Width, MaxY = image.Height };
+            CRect rect = new CRect() { MinX = 0, MinY = 0, MaxX = width, MaxY = height };
             ValueFuns.MinRect(rect, drawRect, ref rect);
             for (Int32 y = rect.MinY; y < rect.MaxY; y++)
             {
@@ -318,7 +361,10 @@ namespace EInkLib
                         }
                     }
                     value = (byte)(~value);
-                    image.SetPixel(x, y, Color.FromArgb(value, value, value));
+                    int index = (width * y + x) * bytesPerPixel;
+                    pixels[index] = value;
+                    pixels[index + 1] = value;
+                    pixels[index + 2] = value;
                 }
             }
         }

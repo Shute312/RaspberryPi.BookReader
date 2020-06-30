@@ -22,7 +22,7 @@ namespace BookReader
             InitializeComponent();
 
             var bitmap = new Bitmap(Picture.Width, Picture.Height);
-            CmbBpp.SelectedIndex = 0;
+            CmbBpp.SelectedIndex = 2;
             Picture.Image = bitmap;
 
             var view = new View();
@@ -65,7 +65,7 @@ namespace BookReader
         {
             int fontSize = (int)NudFontSize.Value;
             CFont.Init(MakePath());
-            Bitmap image = new Bitmap(Picture.Width, Picture.Height);
+            Bitmap image = new Bitmap(Picture.Width, Picture.Height,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             Picture.Image = image;
             Graphics g = Graphics.FromImage(image);
             g.Clear(Color.White);

@@ -49,13 +49,14 @@ namespace CUI
             CUIEnvironment.UpdateDefaultFontSize();
         }
 
-        public static void Run(in CUIFrame frame)
+        public static void Add(in CUIFrame frame)
         {
             Contract.Assert(frame.Properties != null);
             if (_Frames == null)
             {
                 _Frames = new CUIFrame[1] { frame };
                 _Length = 1;
+                _Index = 0;
             }
             else
             {
@@ -70,8 +71,40 @@ namespace CUI
                 _Index = _Length;
                 _Length++;
             }
-            _Frames[_Length - 1].IsEnabled = true;
+            _Frames[_Index].IsEnabled = true;
             //Refresh();
+        }
+
+        public static void Remove(in CUIFrame frame)
+        {
+            var index = GetIndex(frame);
+            if (index == -1)
+            {
+                return;
+            }
+            if (_Length == 1)
+            {
+                _Frames = null;
+                _Length = 0;
+                _Index = -1;
+                return;
+            }
+            var newFrame = new CUIFrame[_Length - 1];
+            for (int i = 0; i < index; i++)
+            {
+                newFrame[i] = _Frames[i];
+            }
+            for (int i = _Length - 1; i > index; i--)
+            {
+                newFrame[i-1] = _Frames[i];
+            }
+            _Frames = newFrame;
+            _Length--;
+            _Index--;
+            if (_Index<0)
+            {
+                _Index = 0;
+            }
         }
 
         public static bool Front(in CUIFrame frame)
@@ -129,7 +162,8 @@ namespace CUI
                 frame = _Frames[_Index];
                 return true;
             }
-            throw new ArgumentOutOfRangeException();
+            frame = new CUIFrame();//for C C中不需要new
+            return false;
         }
 
         private static void Refresh()

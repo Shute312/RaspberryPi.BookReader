@@ -33,7 +33,6 @@
             this.graphicToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.singleFrameToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.documentToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.createCacheToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -43,8 +42,7 @@
             this.fontToolStripMenuItem,
             this.graphicToolStripMenuItem,
             this.singleFrameToolStripMenuItem,
-            this.documentToolStripMenuItem,
-            this.createCacheToolStripMenuItem});
+            this.documentToolStripMenuItem});
             this.menuStrip1.Location = new System.Drawing.Point(0, 0);
             this.menuStrip1.Name = "menuStrip1";
             this.menuStrip1.Size = new System.Drawing.Size(1064, 25);
@@ -79,13 +77,6 @@
             this.documentToolStripMenuItem.Text = "Document";
             this.documentToolStripMenuItem.Click += new System.EventHandler(this.OnClickDocument);
             // 
-            // createCacheToolStripMenuItem
-            // 
-            this.createCacheToolStripMenuItem.Name = "createCacheToolStripMenuItem";
-            this.createCacheToolStripMenuItem.Size = new System.Drawing.Size(93, 21);
-            this.createCacheToolStripMenuItem.Text = "CreateCache";
-            this.createCacheToolStripMenuItem.Click += new System.EventHandler(this.OnClickCreateCache);
-            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -109,6 +100,5 @@
         private System.Windows.Forms.ToolStripMenuItem graphicToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem singleFrameToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem documentToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem createCacheToolStripMenuItem;
     }
 }

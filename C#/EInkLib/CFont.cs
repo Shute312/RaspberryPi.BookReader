@@ -79,6 +79,10 @@ namespace EInkLib
                 byte[] lengthBuff = new byte[] { (byte)(textLength >> 8), (byte)(textLength & 0xFF) };
                 stream.Write(lengthBuff, 0, lengthBuff.Length);
                 stream.WriteByte((byte)bitsPerPixel);
+                byte width_3 = (byte)((info.Width) / 3);//如果非0，且比这个数值小，则只占半个字符宽度
+                byte width_6 = (byte)((info.Width) / 6);//如果非0，且比这个数值小，则只占半个字符宽度
+                byte harfWidth = (byte)((info.Width + 1) >> 1);
+                byte quarterWidth = (byte)((info.Width + 1) >> 2);
                 for (Int32 i = 0; i < textLength; i++)
                 {
                     FontBitmap bitmap = new FontBitmap();
@@ -91,9 +95,9 @@ namespace EInkLib
                     bitmap.Unicode = (ushort)text[i];
 
                     //文字实际绘制的位置
-                    byte minX = byte.MaxValue;
+                    byte minX = (byte)info.Width;
                     byte maxX = 0;
-                    byte minY = byte.MaxValue;
+                    byte minY = (byte)info.Height;
                     byte maxY = 0;
                     for (byte y = 0; y < info.Height; y++)
                     {
@@ -127,6 +131,27 @@ namespace EInkLib
                     bitmap.InnerHeight = (byte)(maxY > minY ? maxY - minY + 1 : 0);
                     bitmap.Width =  (byte)info.Width;
                     bitmap.Height = (byte)info.Height;
+
+                    //比较小的，宽度只占半个字号
+                    if (bitmap.InnerWidth > 0)
+                    {
+                        //if (bitmap.InnerWidth < width_6)
+                        //{
+                        //    bitmap.Width = quarterWidth;
+                        //    bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
+                        //}
+                        //else if (bitmap.InnerWidth < width_3)
+                        //{
+                        //    bitmap.Width = harfWidth;
+                        //    bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
+                        //}
+                        if (text[i] < 128)
+                        {
+                            bitmap.Width = harfWidth; 
+                            bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
+                        }
+                    }
+
                     Int32 fontStride = (bitmap.InnerWidth * bitsPerPixel + 7) / 8;
                     bitmap.Data = new byte[fontStride * bitmap.InnerHeight];
                     if (bitmap.InnerWidth > 0)
@@ -165,6 +190,7 @@ namespace EInkLib
                     stream.WriteByte(bitmap.Y);
                     stream.WriteByte(bitmap.InnerWidth);
                     stream.WriteByte(bitmap.InnerHeight);
+                    stream.WriteByte(bitmap.Width);//只记录宽度，不记录高度
                     stream.Write(bitmap.Data, 0, bitmap.Data.Length);
                     stream.Flush();
                 }
@@ -200,19 +226,19 @@ namespace EInkLib
                         bitmap.Unicode = (ushort)((bytes[byteIndex] << 8) | (bytes[byteIndex + 1]));
                         bitmap.X = bytes[byteIndex + 2];
                         bitmap.Y = bytes[byteIndex + 3];
-                        bitmap.Width = (byte)info.Width;
-                        bitmap.Height = (byte)info.Height;
                         bitmap.InnerWidth = bytes[byteIndex + 4];
                         bitmap.InnerHeight = bytes[byteIndex + 5];
+                        bitmap.Height = (byte)info.Height;
+                        bitmap.Width = bytes[byteIndex + 6];
                         //Int32 dataLength = (bitmap.InnerWidth * bitmap.InnerHeight * bpp + 7) >> 3;
                         Int32 dataLength = (bitmap.InnerWidth * bitmap.BitsPerPixel + 7)/8 * bitmap.InnerHeight;
                         bitmap.Data = new byte[dataLength];
                         if (dataLength > 0)
                         {
-                            Buffer.BlockCopy(bytes, byteIndex + 6, bitmap.Data, 0, dataLength);
+                            Buffer.BlockCopy(bytes, byteIndex + 7, bitmap.Data, 0, dataLength);
                         }
                         bitmaps[index] = bitmap;
-                        byteIndex += (dataLength + 6);
+                        byteIndex += (dataLength + 7);
                         length++;
                     }
                     Contract.Assert(byteIndex == byteSize);
@@ -235,7 +261,6 @@ namespace EInkLib
             Contract.Assert(existed != 0);
             if (existed == FONT_STATE_UNLOAD)//需要加载
             {
-
                 var file = Path.Combine(FontDir, validSize + ExtName);
 
                 //如果读取不到，就标记为不存在字号
@@ -245,7 +270,8 @@ namespace EInkLib
                     //递归下
                     return GetFontBitmap(character, fontSize, out bitmap);
                 }
-                else {
+                else
+                {
                     ExistedFont[validSize] = FONT_STATE_READY;
                 }
             }
@@ -259,7 +285,17 @@ namespace EInkLib
             }
             else
             {
-                bitmap = new FontBitmap() { BitsPerPixel = 0, Data = null, Unicode = 0, InnerWidth = 0, InnerHeight = 0, FontSize = 0, X = 0, Y = 0 };
+                bitmap = new FontBitmap()
+                {
+                    BitsPerPixel = 0,
+                    Data = new byte[0],
+                    Unicode = 0,
+                    InnerWidth = 0,
+                    InnerHeight = 0,
+                    FontSize = 0,
+                    X = 0,
+                    Y = 0,
+                };
             }
             return false;
         }

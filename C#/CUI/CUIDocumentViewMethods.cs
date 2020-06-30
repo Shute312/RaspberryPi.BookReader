@@ -23,6 +23,7 @@ namespace CUI
 
         public static bool PageUp(ref CUIDocumentView document)
         {
+            //向上翻页的功能是显示当前页的逆向操作，等当前页的接口彻底稳定下来，再考虑实现向上翻页的功能
             return false;
         }
 

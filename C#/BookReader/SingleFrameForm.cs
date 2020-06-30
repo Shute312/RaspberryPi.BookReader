@@ -19,9 +19,11 @@ namespace BookReader
         public SingleFrameForm()
         {
             this.InitializeComponent();
-            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel);
+            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             Picture.Click += (o, e) => Draw();
             Draw();
+
+            FormClosed += Form_FormClosed;
         }
 
         const int COLS = 4;
@@ -107,6 +109,16 @@ namespace BookReader
 
         }
 
+        private void Form_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            CUIFrame frame;
+            if (CUIApp.GetActivedFrame(out frame))
+            {
+                CUIApp.Remove(frame);
+                //todo 回收Frame的额外内存
+            }
+        }
+
         private unsafe void Draw()
         {
             CUIFrame frame;
@@ -145,7 +157,7 @@ namespace BookReader
                 CUIFrameMethods.GetChildView(frame, 0, out button);
                 CUIFrameMethods.SetFocus(ref frame, button);
 
-                CUIApp.Run(in frame);
+                CUIApp.Add(in frame);
                 CUIFrameMethods.Refresh(ref frame);
             }
             else {

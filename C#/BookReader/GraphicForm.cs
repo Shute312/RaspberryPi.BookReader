@@ -18,12 +18,20 @@ namespace BookReader
         public GraphicForm()
         {
             InitializeComponent();
-            //this.SizeChanged += (o, e) =>
-            //{
-                
-            //};
-            Picture.Image = new Bitmap(this.Width, this.Height);
+            Picture.Image = new Bitmap(this.Width, this.Height,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             Draw();
+
+            FormClosed += Form_FormClosed;
+        }
+
+        private void Form_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            CUIFrame frame;
+            if (CUIApp.GetActivedFrame(out frame))
+            {
+                CUIApp.Remove(frame);
+                //todo 回收Frame的额外内存
+            }
         }
 
         private void OnClickRefresh(object sender, EventArgs e)

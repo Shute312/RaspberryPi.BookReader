@@ -28,6 +28,16 @@ namespace BookReader
             InitializeComponent();
 
             this.Load += DocumentForm_Load;
+            this.FormClosed += DocumentForm_FormClosed;
+        }
+
+        private void DocumentForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            CUIFrame frame;
+            if (CUIApp.GetActivedFrame(out frame)) {
+                CUIApp.Remove(frame);
+                //todo 回收Frame的额外内存
+            }
         }
 
         private unsafe void DocumentForm_Load(object sender, EventArgs e)
@@ -52,7 +62,7 @@ namespace BookReader
             //}
             LoadDocument(ref documentInfo, path, 0);
 
-            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel);
+            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             CUIFrameMethods.Create(out frame, CUIFrameType.Main);
 
 
@@ -91,7 +101,7 @@ namespace BookReader
             };
             CUIFrameMethods.AddToFrame(ref frame, view);
 
-            CUIApp.Run(in frame);
+            CUIApp.Add(in frame);
 
             Draw();
         }
@@ -142,6 +152,7 @@ namespace BookReader
 
         private unsafe void RenderToPictureBox()
         {
+            //可以尝试直接将render内容指向 picturebox(这里要做好进制转换)、考虑将Bitmap改为32色，一次性写大量数据，加快速度(先看看是否有必要)
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             CBitmap context;
@@ -199,14 +210,15 @@ namespace BookReader
         private unsafe bool LoadDocument(ref CDocumentInfo info, in string path, Int32 startPosition)
         {
             string cachePath;
-            Contract.Assert(CReader.CReader.GetCachePath(path, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache"),out cachePath));
+            bool isCacheName = CReader.CCacheReader.GetCachePath(path, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache"), out cachePath);
+            Contract.Assert(isCacheName);
             if (!File.Exists(cachePath))
             {
-                CReader.CReader.WriteFormatCache(path, out cachePath);
+                CReader.CCacheReader.WriteFormatCache(path, out cachePath);
             }
 
             CCacheHead head;
-            CReader.CReader.ReadHead(path, cachePath, out head);
+            CReader.CCacheReader.ReadHead(path, cachePath, out head);
             Contract.Assert(head.HeadSize > 0);
             info.DocumentOffset = head.HeadSize;
             if (startPosition > 0)
@@ -250,6 +262,31 @@ namespace BookReader
 //#endif
             }
             return true;
+        }
+
+        private void SaveProcgress()
+        {
+            //if (documentView != null &&  !string.IsNullOrEmpty(documentView.Info.Path))
+            //{
+            //    string cachePath;
+            //    bool isCacheName = CReader.CCacheReader.GetCachePath(documentView.Info.Path, Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Cache"), out cachePath);
+            //    if (!File.Exists(cachePath))
+            //    {
+            //        CCacheHead head;
+            //        if (CReader.CCacheReader.ReadHead(documentView.Info.Path,cachePath, out head)) {
+            //        }
+            //        Contract.Assert(head.HeadSize > 0);
+
+            //        using (var stream = File.Open(cachePath, FileMode.Open, FileAccess.Write, FileShare.None))
+            //        {
+            //            head.HeadBuffer[];
+            //            CReader.CCacheReader.WriteHead(cachePath,head);
+            //        }
+            //    }
+
+                
+
+            //}
         }
     }
 }

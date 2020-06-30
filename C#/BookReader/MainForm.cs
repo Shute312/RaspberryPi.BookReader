@@ -100,24 +100,6 @@ namespace BookReader
         {
             ShowChild<DocumentForm>(true, Orientation.TopLeft);
         }
-
-        private void OnClickCreateCache(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "*.txt|*.txt";
-            if (ofd.ShowDialog() == DialogResult.OK && ofd.FileName != null && ofd.FileName.Length > 0)
-            {
-                var path = ofd.FileName;
-                string dstPath;
-                if (CReader.CReader.WriteFormatCache(path,out dstPath))
-                {
-                    MessageBox.Show("生成成功");
-                }
-                else {
-                    MessageBox.Show("生成失败");
-                }
-            }
-        }
     }
     enum Orientation
     {
