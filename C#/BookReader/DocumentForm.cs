@@ -10,6 +10,7 @@ using System.Data;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -62,9 +63,28 @@ namespace BookReader
             //}
             LoadDocument(ref documentInfo, path, 0);
 
-            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            CUIFrameMethods.Create(out frame, CUIFrameType.Main);
+            //采用8bits格式
+            var image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel, System.Drawing.Imaging.PixelFormat.Format8bppIndexed);
+            //配置调色板
+            ColorPalette palette = image.Palette;//这里取得的似乎是复制体
+            for (int i = 0; i < 256; i++)
+            {
+                palette.Entries[i] = Color.FromArgb(i, i, i);
+            }
+            image.Palette = palette;
+            //for (int i = 0; i < byte.MaxValue; i++)
+            //{
+            //    var c = image.Palette.Entries[i];
+            //    image.Palette.Entries[i] = Color.FromArgb(i, i, i);
+            //}
+            //刷成白色背景
+            var bitmapData = image.LockBits(new Rectangle(0,0,image.Width,image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
+            var temp = Enumerable.Repeat<byte>(byte.MaxValue, image.Width*image.Height).ToArray();
+            Marshal.Copy(temp, 0, bitmapData.Scan0, temp.Length);
+            image.UnlockBits(bitmapData);
 
+            Picture.Image = image;
+            CUIFrameMethods.Create(out frame, CUIFrameType.Main);
 
             CPadding padding;
             CCommonLib.CCommonInits.InitPaddingAll(out padding, 12);
@@ -74,9 +94,9 @@ namespace BookReader
             CG.GetValidFontSize(view.Style.FontSize, out fontInfo);
             view.Size = new CSize() { Width = Picture.Width - padding.Left - padding.Right, Height = Picture.Height - padding.Top - padding.Bottom };
             view.Style.FontSize = fontInfo.FontSize;
-            view.Style.FontColor = 0xFF;
-            view.Style.BackColor = 0x10;
-            view.Style.BorderColor = 0xFF0000C0;
+            view.Style.FontColor = 0x00;
+            view.Style.BackColor = 0xFF;
+            view.Style.BorderColor = 0xFF000030;
             view.Style.BorderThickness = 0;
             //view.Text = (char*)documentInfo.Buffer;
             //view.TextSize = documentInfo.BufferSize;

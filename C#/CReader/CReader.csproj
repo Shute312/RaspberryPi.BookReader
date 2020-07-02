@@ -44,7 +44,6 @@
     <Compile Include="CCacheDecoder.cs" />
     <Compile Include="CCacheHead.cs" />
     <Compile Include="CFileCache.cs" />
-    <Compile Include="CFormatCache.cs" />
     <Compile Include="CCacheReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

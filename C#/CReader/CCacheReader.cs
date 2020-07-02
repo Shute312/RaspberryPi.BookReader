@@ -31,9 +31,9 @@ namespace CReader
             }
         }
 
-        public static bool WriteHead(in string path, in byte[] head,in Int32 headLength)
+        public static bool WriteHead(in string path, in byte[] head, in Int32 headLength)
         {
-            Contract.Assert(!string.IsNullOrEmpty(path) && head!=null && head.Length>0);
+            Contract.Assert(!string.IsNullOrEmpty(path) && head != null && head.Length >= headLength && headLength > 0);
             if (!File.Exists(path))
             {
 
@@ -48,61 +48,46 @@ namespace CReader
                 return true;
             }
         }
-        public static bool ReadHead(in string srcPath,in string cachePath, out CCacheHead head)
+        public static bool ReadHead(in string srcPath, in string cachePath, out CCacheHead head)
         {
             Contract.Assert(!string.IsNullOrEmpty(cachePath) && !string.IsNullOrEmpty(srcPath));
+            byte[] buff;
             head = new CCacheHead();
-            if (!File.Exists(srcPath) || !File.Exists(cachePath))
+            if (!ReadHead(cachePath, 16, out buff))
             {
                 return false;
             }
-            using (Stream stream = File.Open(cachePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            Int32 length = ValueFuns.BytesToInt32(buff, 12, 4);
+            if (length < 0)
             {
-                byte[] buff = new byte[16];
-                if (stream.Read(buff, 0, buff.Length) != buff.Length)
-                {
-                    return false;
-                }
-                Int32 length = ValueFuns.BytesToInt32(buff,12,4);
-                if (length < 0)
-                {
-                    return false;
-                }
-                using (Stream dstStream = File.Open(srcPath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    if (dstStream.Length != length)
-                    {
-                        return false;
-                    }
-                }
-                DateTime modifyTime = File.GetLastWriteTime(srcPath);
-                if (modifyTime.Day != buff[8] ||
-                    modifyTime.Hour != buff[9] ||
-                    modifyTime.Minute != buff[10] ||
-                    modifyTime.Second != buff[11])
-                {
-                    return false;
-                }
-                head.HeadSize = (ushort)((((ushort)buff[6])<<8 )| buff[7]);
-                if (stream.Length < head.HeadSize)
-                {
-                    return false;
-                }
-                head.HeadBuffer = new byte[head.HeadSize];
-                Buffer.BlockCopy(buff, 0, head.HeadBuffer, 0, buff.Length);
-                if (head.HeadSize > buff.Length)
-                {
-                    stream.Read(head.HeadBuffer, buff.Length, head.HeadSize - buff.Length);
-                }
-                head.FileType = new byte[4] { buff[0], buff[1], buff[2], buff[3] };
-                head.Version = (ushort)((((ushort)buff[4]) << 8) | buff[5]);
-                head.SourceModifyTime = ValueFuns.BytesToInt32(buff,8,4);
-                head.SourceLength = ValueFuns.BytesToInt32(buff, 12, 4);;
-                return true;
+                return false;
             }
+            using (Stream dstStream = File.Open(srcPath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (dstStream.Length != length)
+                {
+                    return false;
+                }
+            }
+            DateTime modifyTime = File.GetLastWriteTime(srcPath);
+            if (modifyTime.Day != buff[8] ||
+                modifyTime.Hour != buff[9] ||
+                modifyTime.Minute != buff[10] ||
+                modifyTime.Second != buff[11])
+            {
+                return false;
+            }
+            head.HeadSize = (ushort)((((ushort)buff[6]) << 8) | buff[7]);
+            head.HeadBuffer = new byte[head.HeadSize];
+            Buffer.BlockCopy(buff, 0, head.HeadBuffer, 0, buff.Length);
+            head.FileType = new byte[4] { buff[0], buff[1], buff[2], buff[3] };
+            head.Version = (ushort)((((ushort)buff[4]) << 8) | buff[5]);
+            head.SourceModifyTime = ValueFuns.BytesToInt32(buff, 8, 4);
+            head.SourceLength = ValueFuns.BytesToInt32(buff, 12, 4); ;
+            return true;
         }
 
-        public static bool CreateHead(in string fromPath, in ushort headSize, out CCacheHead head)
+        public static bool InitHead(in string fromPath, in ushort headSize, out CCacheHead head)
         {
             Contract.Assert(!string.IsNullOrEmpty(fromPath) && headSize > 15);
             head = new CCacheHead();
@@ -142,11 +127,6 @@ namespace CReader
             }
         }
 
-        public static Int32 ReadFormatCache(in CCacheHead head, out CFormatCache cache)
-        {
-            throw new NotImplementedException();
-        }
-
         public unsafe static bool WriteFormatCache(in string srcPath, out string dstPath)
         {
             if (!GetCachePath(srcPath,Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"Cache"), out dstPath))
@@ -154,7 +134,7 @@ namespace CReader
                 return false;
             }
             CCacheHead head = new CCacheHead();
-            if (!CreateHead(srcPath, FormatCacheHeadSize, out head))
+            if (!InitHead(srcPath, FormatCacheHeadSize, out head))
             {
                 return false;
             }
@@ -198,41 +178,6 @@ namespace CReader
                                             utf8Buff[i] = utf8Buff[utf8ReadSize + i];
                                         }
                                     }
-                                    //Int32 unicodeWriteBuffSize = unicodeWriteSize << 1;//一个Unicode编码是2个byte
-                                    //Int32 offset = 0;
-                                    //Int32 currSize = 0;
-                                    //注：下方算法，会错误将句中的空格也给去掉，无伤大雅，暂时不处理
-                                    //for (int i = 0; i < unicodeWriteSize; i++)
-                                    //{
-                                    //    ushort unicode = pUnicodes[i];
-                                    //    var ch = (char)unicode;
-                                    //    //if (unicode == ' ' || unicode == '　' || unicode == '	')//半角空格+全角空格+tab
-                                    //    if (unicode == 0x20 || unicode == 0x3000 || unicode == 0x9)//半角空格+全角空格+tab
-                                    //    {
-                                    //        offset += 2;//跳2个字节
-                                    //    }
-                                    //    else {
-                                    //        currSize += 2;
-
-                                    //        //换行处理
-                                    //        if (unicode == '\n' || (unicode == '\r' && i < unicodeWriteSize - 1 && pUnicodes[i+1] == '\n'))
-                                    //        {
-                                    //            if (unicode == '\r')
-                                    //            {
-                                    //                i++;
-                                    //                currSize += 2;
-                                    //            }
-                                    //            dstStream.Write(unicodeBuff, offset, currSize);
-                                    //            offset = offset + currSize;
-                                    //            currSize = 0;
-                                    //        }
-                                    //    }
-                                    //}
-                                    //if (currSize > 0)
-                                    //{
-                                    //    dstStream.Write(unicodeBuff, offset, currSize);
-                                    //}
-
                                     Int32 unicodeWriteBuffSize = unicodeWriteSize << 1;//一个Unicode编码是2个byte
                                     Int32 lineEnd = 0;
                                     Int32 lineStart = lineEnd;
@@ -263,7 +208,6 @@ namespace CReader
                                             {
                                                 dstStream.Write(unicodeBuff, lineStart, lineEnd - lineStart);
                                             }
-                                            //string text = Encoding.Unicode.GetString(unicodeBuff,lineStart, lineEnd - lineStart);
                                             lineStart = lineEnd;
                                         }
                                     }
@@ -280,15 +224,10 @@ namespace CReader
             return true;
         }
 
-        public static bool ModifyFormatCacheHead(in string srcPath,in CCacheHead head)
-        {
-            //todo 注意要重新读一次头信息，要确保Offset想匹配，否则要重新写缓存内容
-            throw new NotImplementedException();
-        }
-
         public static bool GetCachePath(in string srcPath, in string dstDir,out string dstPath) {
             var buff = Encoding.UTF8.GetBytes(srcPath);
-            var fileName = Crc16.GetCRC(buff, 0);
+            Contract.Assert(buff.Length<=byte.MaxValue);
+            var fileName = Crc16.GetCRC(buff, (byte)buff.Length);
             var index = srcPath.LastIndexOf("/");
             if (index < 0)
             {

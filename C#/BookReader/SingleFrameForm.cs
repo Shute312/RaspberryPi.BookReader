@@ -19,7 +19,11 @@ namespace BookReader
         public SingleFrameForm()
         {
             this.InitializeComponent();
-            Picture.Image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var g = Graphics.FromImage(image);
+            g.Clear(Color.White);
+            g.Dispose();
+            Picture.Image = image;
             Picture.Click += (o, e) => Draw();
             Draw();
 
@@ -139,14 +143,14 @@ namespace BookReader
                         btn.TextSize = text.Length;
                         btn.Size = new CSize() { Width = 190, Height = 50 };
                         btn.Size.Height = 50;
-                        btn.Style.FontColor = 0xFF;
-                        btn.Style.BackColor = 0x30;
-                        btn.Style.BorderColor = 0xC0;
+                        btn.Style.FontColor = 0x00;
+                        btn.Style.BackColor = 0xFF;//字体没做好颜色混合，在灰度时，会出现白色内容，所以背景使用纯白色
+                        btn.Style.BorderColor = 0xCC;
                         btn.Style.BorderThickness = 1;
 
-                        btn.ActiveStyle.FontColor = 0xFF;
-                        btn.ActiveStyle.BackColor = 0x10;
-                        btn.ActiveStyle.BorderColor = 0x33;
+                        btn.ActiveStyle.FontColor = 0x00;
+                        btn.ActiveStyle.BackColor = 0xEE;
+                        btn.ActiveStyle.BorderColor = 0x30;
                         btn.ActiveStyle.BorderThickness = 1;
                         btn.Location = new CPoint() { X = padding.Left + (padding.Left + btn.Size.Width) * col,
                             Y = padding.Top + (padding.Top + btn.Size.Height) * row };

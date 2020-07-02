@@ -22,7 +22,7 @@ namespace BookReader
             InitializeComponent();
 
             var bitmap = new Bitmap(Picture.Width, Picture.Height);
-            CmbBpp.SelectedIndex = 2;
+            CmbBpp.SelectedIndex = 3;
             Picture.Image = bitmap;
 
             var view = new View();

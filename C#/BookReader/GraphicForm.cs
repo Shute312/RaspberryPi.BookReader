@@ -18,7 +18,11 @@ namespace BookReader
         public GraphicForm()
         {
             InitializeComponent();
-            Picture.Image = new Bitmap(this.Width, this.Height,System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var image = new Bitmap(CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            var g = Graphics.FromImage(image);
+            g.Clear(Color.White);
+            g.Dispose();
+            Picture.Image = image;
             Draw();
 
             FormClosed += Form_FormClosed;

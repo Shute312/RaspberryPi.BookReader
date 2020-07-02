@@ -41,16 +41,13 @@ namespace CGraphic
                     throw new NotImplementedException();
                     break;
             }
-            bitmap.Stride = (width * height * bitmap.BitsPerPixel + 7) / 8;
+            bitmap.Stride = (width * bitmap.BitsPerPixel + 7) / 8;
             bitmap.Length = bitmap.Stride * bitmap.Height;
             //bitmap.Buffer = new byte[bitmap.Stride * bitmap.Height];
             IntPtr ptr = Marshal.AllocHGlobal(bitmap.Length);
             bitmap.Buffer = (byte*)ptr;
-            //for C要初始化内存为0
-            //for (int i = 0; i < bitmap.Length; i++)
-            //{
-            //    Marshal.WriteByte(ptr, i, 0);
-            //}
+            var temp = Enumerable.Repeat<byte>(byte.MaxValue, bitmap.Length).ToArray();
+            Marshal.Copy(temp, 0, ptr, temp.Length);
             var time = stopwatch.ElapsedMilliseconds;
         }
 

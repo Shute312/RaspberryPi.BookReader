@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using CCommonLib;
@@ -13,6 +15,9 @@ namespace EInkLib
 {
     public static class EInkRender
     {
+        [DllImport("kernel32.dll", EntryPoint = "CopyMemory", SetLastError = false)]
+        public static extern void CopyMemory(IntPtr dest, IntPtr src, uint count);
+
         public unsafe static Int32 MeasureText(in CTextInfo textInfo, in CGraphic.CFontInfo fontInfo, in CPoint startPosition, in CRect rect, out CRect renderRect)
         {
             //Contract.Assert(startPosition.X >= 0 && startPosition.Y >= 0
@@ -303,68 +308,75 @@ namespace EInkLib
 
         public unsafe static void DrawToBitmap(ref Bitmap image, in CBitmap bitmap, in CRect drawRect)
         {
-            Contract.Assert(image.PixelFormat == PixelFormat.Format24bppRgb);
-            var rect = new Rectangle(0, 0, image.Width, image.Height);
-            var bitmapData = image.LockBits(rect, ImageLockMode.ReadOnly, image.PixelFormat);
-            Int32 bytesPerPixel = 3;
-            var dstBuff = Enumerable.Repeat<byte>(byte.MaxValue,
+            Contract.Assert(image.PixelFormat == PixelFormat.Format24bppRgb || image.PixelFormat == PixelFormat.Format8bppIndexed);
+            var bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
+            Int32 bytesPerPixel = image.PixelFormat == PixelFormat.Format24bppRgb?3:1;
+            if (bitmap.BitsPerPixel == 8 && image.PixelFormat == PixelFormat.Format8bppIndexed)
+            {
+                CRect validRect = new CRect() { MinX = 0, MinY = 0, MaxX = bitmap.Width, MaxY = bitmap.Height };
+                if (ValueFuns.MinRect(validRect, drawRect, ref validRect))
+                {
+                    if (drawRect.MinX == 0 && drawRect.MinY == 0 && drawRect.MaxX == image.Width && drawRect.MaxY == image.Height)
+                    {
+                        CopyMemory(bitmapData.Scan0, (IntPtr)bitmap.Buffer, (UInt32)bitmap.Length);
+
+                        //var temp = new byte[bitmap.Length];
+                        //Marshal.Copy((IntPtr)bitmap.Buffer, temp, 0, temp.Length);
+                        //Marshal.Copy(temp, 0, bitmapData.Scan0, temp.Length);
+                    }
+                    else
+                    {
+                        //var temp = new byte[validRect.MaxX - validRect.MinX];
+                        var stride = validRect.MaxX - validRect.MinX;
+                        for (Int32 y = validRect.MinY; y < validRect.MaxY; y++)
+                        {
+                            CopyMemory(bitmapData.Scan0 + y * bitmap.Width + validRect.MinX, (IntPtr)(bitmap.Buffer + y * bitmap.Width + validRect.MinX), (UInt32)stride);
+
+                            //Marshal.Copy((IntPtr)(bitmap.Buffer + y * bitmap.Width + validRect.MinX), temp, 0, temp.Length);
+                            //Marshal.Copy(temp, 0, bitmapData.Scan0 + y * bitmap.Width + validRect.MinX, temp.Length);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                var dstBuff = Enumerable.Repeat<byte>(byte.MaxValue,
                 image.Width * image.Height * bytesPerPixel).ToArray();
-            DrawToBitmap(ref dstBuff, image.Width, image.Height, bytesPerPixel, bitmap, drawRect);
-            Marshal.Copy(dstBuff, 0, bitmapData.Scan0, dstBuff.Length);
+                DrawToBitmap(ref dstBuff, image.Width, image.Height, bytesPerPixel, bitmap, drawRect);
+                Marshal.Copy(dstBuff, 0, bitmapData.Scan0, dstBuff.Length);
+            }
             image.UnlockBits(bitmapData);
-            //byte eInkBpp = bitmap.BitsPerPixel;
-            //CRect rect = new CRect() { MinX = 0, MinY = 0, MaxX = image.Width, MaxY = image.Height };
-            //ValueFuns.MinRect(rect, drawRect, ref rect);
-            //for (Int32 y = rect.MinY; y < rect.MaxY; y++)
-            //{
-            //    for (Int32 x = rect.MinX; x < rect.MaxX; x++)
-            //    {
-            //        byte value;
-            //        GetPixel(bitmap.Buffer, bitmap.Width, eInkBpp, x, y, out value);
-            //        if (eInkBpp != 8)
-            //        {
-            //            if (eInkBpp == 4)
-            //            {
-            //                value <<= 4;
-            //            }
-            //            else
-            //            {
-            //                throw new NotImplementedException();
-            //            }
-            //        }
-            //        value = (byte)(~value);
-            //        image.SetPixel(x, y, Color.FromArgb(value, value, value));
-            //    }
-            //}
         }
 
         public unsafe static void DrawToBitmap(ref byte[] pixels, in Int32 width, in Int32 height, in Int32 bytesPerPixel, in CBitmap bitmap, in CRect drawRect)
         {
             byte eInkBpp = bitmap.BitsPerPixel;
             CRect rect = new CRect() { MinX = 0, MinY = 0, MaxX = width, MaxY = height };
-            ValueFuns.MinRect(rect, drawRect, ref rect);
-            for (Int32 y = rect.MinY; y < rect.MaxY; y++)
+            if (ValueFuns.MinRect(rect, drawRect, ref rect))
             {
-                for (Int32 x = rect.MinX; x < rect.MaxX; x++)
+                for (Int32 y = rect.MinY; y < rect.MaxY; y++)
                 {
-                    byte value;
-                    GetPixel(bitmap.Buffer, bitmap.Width, eInkBpp, x, y, out value);
-                    if (eInkBpp != 8)
+                    for (Int32 x = rect.MinX; x < rect.MaxX; x++)
                     {
-                        if (eInkBpp == 4)
+                        byte value;
+                        GetPixel(bitmap.Buffer, bitmap.Width, eInkBpp, x, y, out value);
+                        if (eInkBpp != 8)
                         {
-                            value <<= 4;
+                            if (eInkBpp == 4)
+                            {
+                                value <<= 4;
+                            }
+                            else
+                            {
+                                throw new NotImplementedException();
+                            }
                         }
-                        else
-                        {
-                            throw new NotImplementedException();
-                        }
+                        //value = (byte)(~value);
+                        int index = (width * y + x) * bytesPerPixel;
+                        pixels[index] = value;
+                        pixels[index + 1] = value;
+                        pixels[index + 2] = value;
                     }
-                    value = (byte)(~value);
-                    int index = (width * y + x) * bytesPerPixel;
-                    pixels[index] = value;
-                    pixels[index + 1] = value;
-                    pixels[index + 2] = value;
                 }
             }
         }
@@ -392,7 +404,7 @@ namespace EInkLib
                     Int32 fontStride = (matrix.InnerWidth * matrix.BitsPerPixel + 7) / 8;
                     Int32 byteIndex = yy * fontStride + (xx * matrix.BitsPerPixel / 8);
                     byte color = matrix.Data[byteIndex];
-                    //if (color != 0)
+                    if (color != byte.MaxValue)
                     {
                         byte gray;
                         if (matrix.BitsPerPixel != 8)
@@ -431,7 +443,7 @@ namespace EInkLib
                             gray = color;
                         }
                         //gray = (byte)(~gray);
-                        if (gray != 0)
+                        if (gray != byte.MaxValue)
                         {
                             DrawPixel(bitmap, newX, newY, gray);
                         }

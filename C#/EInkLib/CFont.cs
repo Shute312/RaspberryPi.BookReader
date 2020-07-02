@@ -15,8 +15,10 @@ namespace EInkLib
         public const byte MAX_FONT_SIZE = 128;
         private const string ExtName = ".font";
         public static Int32  DefaultSize = 24;
-        public static Color Background = Color.Black;
-        public static Color Foreground = Color.White;
+        //public static Color Background = Color.Black;
+        //public static Color Foreground = Color.White;
+        public static Color Background = Color.White;
+        public static Color Foreground = Color.Black;
         public static FontBitmap[][] BitmapCache;
         public static byte[] ExistedFont;//值为0时，表示不存在对应字号；指为1时，表示存在字号，但是未读取、解析字体文件
         public static string FontDir;
@@ -79,26 +81,26 @@ namespace EInkLib
                 byte[] lengthBuff = new byte[] { (byte)(textLength >> 8), (byte)(textLength & 0xFF) };
                 stream.Write(lengthBuff, 0, lengthBuff.Length);
                 stream.WriteByte((byte)bitsPerPixel);
-                byte width_3 = (byte)((info.Width) / 3);//如果非0，且比这个数值小，则只占半个字符宽度
-                byte width_6 = (byte)((info.Width) / 6);//如果非0，且比这个数值小，则只占半个字符宽度
-                byte harfWidth = (byte)((info.Width + 1) >> 1);
-                byte quarterWidth = (byte)((info.Width + 1) >> 2);
+                byte halfWidth = (byte)((info.Width + 1) >> 1);
                 for (Int32 i = 0; i < textLength; i++)
                 {
                     FontBitmap bitmap = new FontBitmap();
                     graphics.Clear(Background);
-                    graphics.DrawString(text[i].ToString(), font, brush, 0, 0);
+                    var ch = text[i];
+                    graphics.DrawString(ch.ToString(), font, brush, 0, 0);
 
-                    var buffer = new byte[info.Width * info.Height];
+                    //var buffer = new byte[info.Width * info.Height];
+                    var buffer = Enumerable.Repeat<byte>(byte.MaxValue,info.Width * info.Height).ToArray();
                     bitmap.BitsPerPixel = (byte)bitsPerPixel;
                     bitmap.FontSize = info.FontSize;
-                    bitmap.Unicode = (ushort)text[i];
+                    bitmap.Unicode = (ushort)ch;
 
                     //文字实际绘制的位置
                     byte minX = (byte)info.Width;
                     byte maxX = 0;
                     byte minY = (byte)info.Height;
                     byte maxY = 0;
+                    Int32 shiftX = 0;//当用非标准大小去描述字模时，位置要做二次偏移
                     for (byte y = 0; y < info.Height; y++)
                     {
                         for (byte x = 0; x < info.Width; x++)
@@ -107,22 +109,22 @@ namespace EInkLib
                             //Gray = R*0.299 + G*0.587 + B*0.114 放大 65536 倍(2的16次方)
                             byte gray = (byte)((color.R * 19595 + color.G * 38470 + color.B * 7471) >> 16);
                             //byte gray = color.G;//直接用绿色分量代替
-                            if (gray > 0)
-                            {
-                                if (bitsPerPixel != 8)
-                                {
-                                    //先处理BPP，可以获得更小的绘制范围
-                                    gray = (byte)(gray >> (8 - bitsPerPixel));
-                                }
-                                buffer[y * info.Width + x] = gray;
-                            }
-                            if (gray > 0)
+                            if (gray < byte.MaxValue)
                             {
                                 if (minX > x) minX = x;
                                 if (maxX < x) maxX = x;
                                 if (minY > y) minY = y;
                                 if (maxY < y) maxY = y;
                             }
+                            if (gray < byte.MaxValue)
+                            {
+                                if (bitsPerPixel != 8)
+                                {
+                                    //先处理BPP，可以获得更小的绘制范围
+                                    gray = (byte)(gray >> (8 - bitsPerPixel));
+                                }
+                            }
+                            buffer[y * info.Width + x] = gray;
                         }
                     }
                     bitmap.X = minX;
@@ -135,36 +137,29 @@ namespace EInkLib
                     //比较小的，宽度只占半个字号
                     if (bitmap.InnerWidth > 0)
                     {
-                        //if (bitmap.InnerWidth < width_6)
-                        //{
-                        //    bitmap.Width = quarterWidth;
-                        //    bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
-                        //}
-                        //else if (bitmap.InnerWidth < width_3)
-                        //{
-                        //    bitmap.Width = harfWidth;
-                        //    bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
-                        //}
-                        if (text[i] < 128)
+                        if (bitmap.InnerWidth < halfWidth)
                         {
-                            bitmap.Width = harfWidth; 
-                            bitmap.X = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
+                            bitmap.Width = halfWidth;
+                            var newX = (byte)((bitmap.Width - bitmap.InnerWidth) >> 1);
+                            //图像整体向左移动
+                            shiftX = newX - bitmap.X;
+                            bitmap.X = newX;
                         }
                     }
 
-                    Int32 fontStride = (bitmap.InnerWidth * bitsPerPixel + 7) / 8;
-                    bitmap.Data = new byte[fontStride * bitmap.InnerHeight];
                     if (bitmap.InnerWidth > 0)
                     {
+                        Int32 fontStride = (bitmap.InnerWidth * bitsPerPixel + 7) / 8;
+                        bitmap.Data = Enumerable.Repeat<byte>(byte.MaxValue, fontStride * bitmap.InnerHeight).ToArray();
                         for (Int32 y = 0; y < bitmap.InnerHeight; y++)
                         {
                             Int32 yy = bitmap.Y + y;
                             for (Int32 x = 0; x < bitmap.InnerWidth; x++)
                             {
-                                Int32 xx = bitmap.X + x;
+                                Int32 xx = bitmap.X + x - shiftX;
                                 Int32 byteIndex = y * fontStride + (x * bitmap.BitsPerPixel / 8);
                                 byte color = buffer[yy * info.Width + xx];
-                                if (color > 0)
+                                if (color < byte.MaxValue)
                                 {
                                     if (bitmap.BitsPerPixel == 8)
                                     {
@@ -176,8 +171,15 @@ namespace EInkLib
                                         Int32 mode = (8 / bitmap.BitsPerPixel) - 1;
                                         Int32 index = x & mode;
                                         //Int32 index = ((y * bitmap.InnerWidth + x) * bitsPerPixel) % (8 / bitsPerPixel);
-                                        byte gray = (byte)(color << ((mode - index) * bitmap.BitsPerPixel));
-                                        bitmap.Data[byteIndex] |= gray;
+                                        var skip = ((mode - index) * bitmap.BitsPerPixel);
+                                        Int32 gray = (byte)(color << skip);
+                                        var headOffset = skip + bitmap.BitsPerPixel;
+                                        var head = (0xff>> headOffset)<< headOffset;//将前面的位数全弄成1
+                                        var tailOffet = 8 - skip;
+                                        var tail = (((byte)(0xff<< tailOffet)) >> tailOffet);//将后边的位全弄成1
+                                        gray = head | tail | gray;
+
+                                        bitmap.Data[byteIndex] &= (byte)gray;
                                     }
                                 }
                             }
@@ -191,7 +193,10 @@ namespace EInkLib
                     stream.WriteByte(bitmap.InnerWidth);
                     stream.WriteByte(bitmap.InnerHeight);
                     stream.WriteByte(bitmap.Width);//只记录宽度，不记录高度
-                    stream.Write(bitmap.Data, 0, bitmap.Data.Length);
+                    if (bitmap.InnerWidth > 0)
+                    {
+                        stream.Write(bitmap.Data, 0, bitmap.Data.Length);
+                    }
                     stream.Flush();
                 }
                 image.Dispose();

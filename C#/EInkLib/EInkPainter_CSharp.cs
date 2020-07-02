@@ -32,7 +32,7 @@ namespace EInkLib
                             {
                                 throw new NotImplementedException();
                             }
-                            value = (byte)(~value);
+                            //value = (byte)(~value);
                             bitmap.SetPixel(x, y, Color.FromArgb(value, value, value));
                         }
                     }
