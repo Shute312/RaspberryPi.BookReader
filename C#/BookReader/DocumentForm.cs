@@ -19,17 +19,31 @@ using System.Windows.Forms;
 
 namespace BookReader
 {
+    public enum RenderMode
+    {
+        Form,
+        EInk,
+        Both
+    }
+
     public partial class DocumentForm : Form
     {
         const Int32 BUFF_SIZE = 100 << 10;
         const Int32 PRE_SIZE = BUFF_SIZE / 10;//往前额外读多少
-        
+        DeviceInfo DeviceInfo;
+
+
         public unsafe DocumentForm()
         {
             InitializeComponent();
-
-            this.Load += DocumentForm_Load;
             this.FormClosed += DocumentForm_FormClosed;
+            foreach (var item in Enum.GetNames(typeof(RenderMode)))
+            {
+                CmbRenderMode.Items.Add(item);
+            }
+            CmbRenderMode.SelectedIndex = CmbRenderMode.Items.Count - 1;
+
+            Init();
         }
 
         private void DocumentForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -39,10 +53,35 @@ namespace BookReader
                 CUIApp.Remove(frame);
                 //todo 回收Frame的额外内存
             }
+
+            IT8951API.Close();
         }
 
-        private unsafe void DocumentForm_Load(object sender, EventArgs e)
+        CUIFrame frame;
+        CUIDocumentView documentView;
+
+        private void Init()
         {
+
+            if (IT8951API.Open() == 0)
+            {
+                MessageBox.Show("无法打开设备");
+                return;
+            }
+            UInt32[] deviceInfoData = new UInt32[28];
+            if (IT8951API.GetDeviceInfo(deviceInfoData) != deviceInfoData.Length) {
+                MessageBox.Show("无法获取设备信息");
+                return;
+            }
+
+            DeviceInfo = new DeviceInfo(deviceInfoData);
+            //CUIEnvironment.WidthOfPixel = (int)DeviceInfo.Width;
+            CUIEnvironment.WidthOfPixel = (int)DeviceInfo.Width - 4;
+            CUIEnvironment.HeightOfPixel = (int)DeviceInfo.Height;
+
+            LblWidth.Text = CUIEnvironment.WidthOfPixel.ToString();
+            LblHeight.Text = CUIEnvironment.HeightOfPixel.ToString();
+            LblAddress.Text = DeviceInfo.ImageBufBase.ToString();
 
             var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Test.txt");
             Contract.Ensures(File.Exists(path));
@@ -78,8 +117,8 @@ namespace BookReader
             //    image.Palette.Entries[i] = Color.FromArgb(i, i, i);
             //}
             //刷成白色背景
-            var bitmapData = image.LockBits(new Rectangle(0,0,image.Width,image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
-            var temp = Enumerable.Repeat<byte>(byte.MaxValue, image.Width*image.Height).ToArray();
+            var bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
+            var temp = Enumerable.Repeat<byte>(byte.MaxValue, image.Width * image.Height).ToArray();
             Marshal.Copy(temp, 0, bitmapData.Scan0, temp.Length);
             image.UnlockBits(bitmapData);
 
@@ -92,7 +131,11 @@ namespace BookReader
             //view.FontSize = 12;
             CFontInfo fontInfo;
             CG.GetValidFontSize(view.Style.FontSize, out fontInfo);
-            view.Size = new CSize() { Width = Picture.Width - padding.Left - padding.Right, Height = Picture.Height - padding.Top - padding.Bottom };
+            view.Size = new CSize()
+            {
+                Width = (int)(CUIEnvironment.WidthOfPixel - padding.Left - padding.Right),
+                Height = (int)(CUIEnvironment.HeightOfPixel- padding.Top - padding.Bottom)
+            };
             view.Style.FontSize = fontInfo.FontSize;
             view.Style.FontColor = 0x00;
             view.Style.BackColor = 0xFF;
@@ -126,9 +169,6 @@ namespace BookReader
             Draw();
         }
 
-        CUIFrame frame;
-        CUIDocumentView documentView;
-
         protected override void OnKeyUp(KeyEventArgs e)
         {
             Stopwatch stopwatch = new Stopwatch();
@@ -155,7 +195,7 @@ namespace BookReader
             if (handle)
             {
                 CUIFrameMethods.Refresh();
-                RenderToPictureBox();
+                Render();
             }
 
             e.Handled = handle;
@@ -166,43 +206,9 @@ namespace BookReader
         private unsafe void Draw()
         {
             CUIFrameMethods.Refresh();
-            RenderToPictureBox();
-
+            Render();
         }
 
-        private unsafe void RenderToPictureBox()
-        {
-            //可以尝试直接将render内容指向 picturebox(这里要做好进制转换)、考虑将Bitmap改为32色，一次性写大量数据，加快速度(先看看是否有必要)
-            Stopwatch stopwatch = new Stopwatch();
-            stopwatch.Start();
-            CBitmap context;
-            CGraphicInits.InitBitmap(out context, CPixelFormat.Format8bppIndexed, CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel);
-            CUIApp.Render(ref context, true);//渲染出来
-            var renderTime = stopwatch.ElapsedMilliseconds;
-
-            stopwatch.Restart();
-            var image = (Bitmap)Picture.Image;
-            var modifyRect = new CRect()
-            {
-                MinX = 0,
-                MinY = 0,
-                MaxX = Picture.Width,
-                MaxY = Picture.Height
-            };
-            //画到屏幕上
-            EInkRender.DrawToBitmap(ref image, context, modifyRect);
-
-            if (context.Buffer != null)
-            {
-                Marshal.FreeHGlobal((IntPtr)context.Buffer);
-            }
-            var drawToBitmapTime = stopwatch.ElapsedMilliseconds;
-
-            stopwatch.Restart();
-            Picture.Invalidate();
-            Picture.Update();
-            var updateTime = stopwatch.ElapsedMilliseconds;
-        }
 
         private bool ReloadFile(ref CUIDocumentView view)
         {
@@ -307,6 +313,98 @@ namespace BookReader
                 
 
             //}
+        }
+
+        private void BtnClear_Click(object sender, EventArgs e)
+        {
+            RenderMode renderMode = RenderMode.Both;
+            if (CmbRenderMode.SelectedItem.ToString().Equals(RenderMode.EInk)) renderMode = RenderMode.EInk;
+            else if (CmbRenderMode.SelectedItem.ToString().Equals(RenderMode.Form)) renderMode = RenderMode.Form;
+
+            if (renderMode == RenderMode.Both || renderMode == RenderMode.Form)
+            {
+                var image = (Bitmap)Picture.Image;
+                //刷成白色背景
+                var bitmapData = image.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadOnly, image.PixelFormat);
+                var temp = Enumerable.Repeat<byte>(byte.MaxValue, image.Width * image.Height).ToArray();
+                Marshal.Copy(temp, 0, bitmapData.Scan0, temp.Length);
+                image.UnlockBits(bitmapData);
+
+                Picture.Invalidate();
+                Picture.Update();
+            }
+            int reCode = 0;
+            if (renderMode == RenderMode.Both || renderMode == RenderMode.EInk)
+            {
+                reCode = IT8951API.Erase(Convert.ToInt32(DeviceInfo.ImageBufBase), (int)(DeviceInfo.Width * DeviceInfo.Height));
+                if (reCode != 0)
+                {
+                    reCode = IT8951API.RenderImage(Convert.ToInt32(DeviceInfo.ImageBufBase), 0, 0, (int)DeviceInfo.Width, (int)DeviceInfo.Height);
+                }
+            }
+            if (reCode == 0)
+            {
+
+            }
+            this.Focus();
+        }
+
+        private unsafe void Render()
+        {
+            //可以尝试直接将render内容指向 picturebox(这里要做好进制转换)、考虑将Bitmap改为32色，一次性写大量数据，加快速度(先看看是否有必要)
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            CBitmap context;
+            CGraphicInits.InitBitmap(out context, CPixelFormat.Format8bppIndexed, CUIEnvironment.WidthOfPixel, CUIEnvironment.HeightOfPixel);
+            CUIApp.Render(ref context, true);//渲染出来
+            var drawTime = stopwatch.ElapsedMilliseconds;
+            LblDrawTime.Text = drawTime.ToString();
+            RenderMode renderMode = RenderMode.Both;
+            if (CmbRenderMode.SelectedItem.ToString().Equals(RenderMode.EInk)) renderMode = RenderMode.EInk;
+            else if (CmbRenderMode.SelectedItem.ToString().Equals(RenderMode.Form)) renderMode = RenderMode.Form;
+
+            if (renderMode == RenderMode.Both || renderMode == RenderMode.Form)
+            {
+                stopwatch.Restart();
+                var image = (Bitmap)Picture.Image;
+                var modifyRect = new CRect()
+                {
+                    MinX = 0,
+                    MinY = 0,
+                    MaxX = (int)DeviceInfo.Width,
+                    MaxY = (int)DeviceInfo.Height
+                };
+                //画到屏幕上
+                EInkRender.DrawToBitmap(ref image, context, modifyRect);
+
+                Picture.Invalidate();
+                Picture.Update();
+                var renderDesktopTime = stopwatch.ElapsedMilliseconds;
+                LblRenderDesktopTime.Text = renderDesktopTime.ToString();
+            }
+
+            if (renderMode == RenderMode.Both || renderMode == RenderMode.EInk)
+            {
+                stopwatch.Restart();
+                //var reCode = IT8951API.SendImage((IntPtr)context.Buffer, Convert.ToInt32(DeviceInfo.ImageBufBase), 0, 0, context.Width, context.Height);
+                //if (reCode != 0)
+                //{
+                //    reCode = IT8951API.RenderImage(Convert.ToInt32(DeviceInfo.ImageBufBase), 0, 0, context.Width, context.Height);
+                //}
+                //内部缓存与显示的接口肯定存在问题，不然不会慢到那么离谱，可以考虑用同一块缓存，边写边显示。经测试，横向过大，导致很慢(横向达到1872会特别慢)
+                var reCode = IT8951API.ShowImage((IntPtr)context.Buffer, Convert.ToInt32(DeviceInfo.ImageBufBase), 0, 0, context.Width, context.Height);
+                if (reCode == 0)
+                {
+
+                }
+                var eInkTime = stopwatch.ElapsedMilliseconds;
+                LblRenderEInkTime.Text = eInkTime.ToString();
+            }
+
+            if (context.Buffer != null)
+            {
+                Marshal.FreeHGlobal((IntPtr)context.Buffer);
+            }
         }
     }
 }
